@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5f58">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuisinella">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Gammes Cuisinella</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style id="page-style">
+/* Layout: one-screen phone app — top bar, scrolling view, fixed bottom tab bar; detail opens as a bottom sheet */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --fg:#1d2522; --muted:#5f6b66; --line:#dde1dc;
+  --accent:#1f5f58; --accent-soft:#e1ede9; --warn:#a4561d; --warn-soft:#f6e9dd; --good:#2f7a3c; --bad:#b0392f;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --tabh:62px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141917; --surface:#1c2320; --fg:#e7ece9; --muted:#9aa7a1; --line:#2d3632;
+  --accent:#6fc2b4; --accent-soft:#1f3531; --warn:#e3a06a; --warn-soft:#3a2a1d; --good:#7fd08c; --bad:#f08a7f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141917; --surface:#1c2320; --fg:#e7ece9; --muted:#9aa7a1; --line:#2d3632;
+  --accent:#6fc2b4; --accent-soft:#1f3531; --warn:#e3a06a; --warn-soft:#3a2a1d; --good:#7fd08c; --bad:#f08a7f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:90px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:0 calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 24px)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);display:flex;align-items:center;gap:10px;padding-block:14px 10px}
+.top h1{font-family:var(--display);font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em;flex:1;min-width:0}
+.savebtn{background:var(--accent);color:var(--bg);font-weight:600;padding:8px 14px;border-radius:999px;font-size:14px}
+.savebtn[disabled]{opacity:.5}
+.saved{font-size:13px;color:var(--muted)}
+.fsbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.fsbtn svg{width:20px;height:20px;stroke:var(--fg);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.toast{font-size:13px;color:var(--warn)}
+.view{display:flex;flex-direction:column;gap:14px}
+.search{position:relative}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.chip{white-space:nowrap;font-size:13px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.chip small{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.sec{font-family:var(--display);font-weight:600;font-size:1.05rem;margin:8px 0 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;min-height:92px}
+.card .n{font-weight:600;line-height:1.25}
+.card .f{font-size:12px;color:var(--muted)}
+.card .p{font-size:13px;color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;margin-top:auto}
+.card.seen{border-color:var(--accent)}
+.tick{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-size:12px;font-weight:700}
+.card.big{grid-column:1/-1;min-height:0}
+.card .d{font-size:13.5px;color:var(--muted)}
+.empty{padding:32px 8px;text-align:center;color:var(--muted)}
+.fab{position:fixed;right:16px;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);z-index:15;background:var(--accent);color:var(--bg);width:54px;height:54px;border-radius:50%;font-size:28px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;height:var(--tabh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--accent);font-weight:600}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* progress */
+.meter{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.meter .row{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.fams{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.fams .it{display:grid;grid-template-columns:minmax(0,1fr) 90px 44px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.fams .it:last-child{border-bottom:0}
+.fams .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+/* quiz */
+.quiz{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.qlabel{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.qword{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.1;text-wrap:balance}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opt{border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;background:var(--bg);font-size:14px}
+.opt.ok{border-color:var(--good);color:var(--good);font-weight:600}
+.opt.ko{border-color:var(--bad);color:var(--bad)}
+.score{display:flex;gap:16px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.score b{color:var(--fg)}
+.next{background:var(--accent);color:var(--bg);font-weight:600;padding:12px;border-radius:12px}
+.modes{display:flex;gap:6px}
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(10,14,12,.45)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-width:720px;margin:0 auto;background:var(--surface);border-radius:20px 20px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;max-height:88%;overflow-y:auto;transform:translateY(0);transition:transform .22s ease}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);align-self:center}
+.sheet h2{font-family:var(--display);font-weight:800;font-size:1.5rem;margin:0}
+.pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.pill.g{background:var(--warn-soft);color:var(--warn)}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border-radius:12px;padding:12px 14px;font-weight:500}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:8px}
+.actions button{flex:1;padding:12px;border-radius:12px;font-weight:600}
+.btn-main{background:var(--accent);color:var(--bg)}
+.btn-ghost{background:var(--bg);border:1px solid var(--line)}
+.btn-danger{color:var(--bad);background:var(--bg);border:1px solid var(--line)}
+.note{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top">
+    <h1 id="title">Catalogue</h1>
+    <span id="saveState" class="saved" role="status"></span>
+    <button class="fsbtn" id="fs" type="button" aria-label="Plein écran" title="Plein écran" hidden><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+
+  <section class="view" id="v-cat">
+    <div class="search"><input type="search" id="q" placeholder="Chercher un nom, un coloris, une note…" aria-label="Rechercher"></div>
+    <div class="chips" id="chips" role="toolbar" aria-label="Filtrer par famille"></div>
+    <div id="catList"></div>
+  </section>
+
+  <section class="view" id="v-quiz" hidden>
+    <div class="modes chips" id="modes" role="toolbar" aria-label="Type de questions">
+      <button class="chip" type="button" data-mode="fam" aria-pressed="true">Coloris → famille</button>
+      <button class="chip" type="button" data-mode="name" aria-pressed="false">Famille → coloris</button>
+    </div>
+    <div class="quiz" id="quiz"></div>
+    <div class="score" id="score"></div>
+  </section>
+
+  <section class="view" id="v-me" hidden>
+    <div class="meter" id="meter"></div>
+    <h2 class="sec">Par famille</h2>
+    <div class="fams" id="famStats"></div>
+    <h2 class="sec">Mes prix et notes</h2>
+    <div id="noted"></div>
+    <h2 class="sec">Sauvegarde</h2>
+    <div class="meter"><span class="note" style="font-size:13.5px">Tes notes sont gardées sur ce téléphone. Télécharge une sauvegarde de temps en temps pour ne rien perdre si tu changes de téléphone ou vides le navigateur.</span>
+      <div class="actions"><button type="button" class="btn-ghost" id="impBtn">Restaurer</button><button type="button" class="btn-main" id="exp">Télécharger</button></div>
+      <input type="file" id="imp" accept="application/json,.json" hidden></div>
+    <p class="note">Base établie à partir du site public Cuisinella. Les coloris et prix peuvent varier selon le magasin : le catalogue du magasin de Porto-Vecchio fait foi.</p>
+  </section>
+</div>
+
+<button class="fab" id="fab" aria-label="Ajouter un modèle ou un coloris">+</button>
+
+<nav class="tabs" role="tablist" aria-label="Navigation">
+  <button role="tab" data-tab="cat" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Catalogue</button>
+  <button role="tab" data-tab="quiz" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5v.01"/></svg>Réviser</button>
+  <button role="tab" data-tab="me" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg>Mon suivi</button>
+</nav>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
+
+<script type="application/json" id="page-data">
+{"rows":[
+{"id":"g1","t":"Gamme","fam":"Gamme de structure","name":"Gamme courte (entrée de gamme)","det":"80 meubles, 1 hauteur de meubles bas, 10 coloris de façades, caissons 2 coloris en 16 mm","price":"","notes":"","seen":false},
+{"id":"g2","t":"Gamme","fam":"Gamme de structure","name":"Tentation","det":"Ultra personnalisable : + de 500 meubles, 125 coloris de façades, caissons 17 coloris en 19 mm","price":"","notes":"","seen":false},
+{"id":"m1","t":"Modèle","fam":"Modèle phare","name":"Moove","det":"Moderne, couleurs affirmées (Neptune & Spicy, Agave avec noir)","price":"","notes":"","seen":false},
+{"id":"m2","t":"Modèle","fam":"Modèle phare","name":"Color","det":"Façades laquées, 12 coloris (Misty blue, Carmen, Litchi & Sky…)","price":"","notes":"","seen":false},
+{"id":"m3","t":"Modèle","fam":"Modèle phare","name":"Pearl","det":"Contemporain, ex. Pearl Forest vert et noir","price":"","notes":"","seen":false},
+{"id":"m4","t":"Modèle","fam":"Modèle phare","name":"Bridget","det":"Style campagne, façades à cadre (ex. Bridget Sauge avec îlot)","price":"","notes":"","seen":false},
+{"id":"m5","t":"Modèle","fam":"Modèle phare","name":"Vega","det":"Tons bois chauds, style design / scandinave","price":"","notes":"","seen":false},
+{"id":"m6","t":"Modèle","fam":"Modèle phare","name":"Trend +","det":"Bois et éléments métal, style design","price":"","notes":"","seen":false},
+{"id":"f1","t":"Façade","fam":"Mate","name":"Ombre Pearl","det":"","price":"","notes":"","seen":false},
+{"id":"f2","t":"Façade","fam":"Mate","name":"Blanc fuji","det":"","price":"","notes":"","seen":false},
+{"id":"f3","t":"Façade","fam":"Mate","name":"Grizzli","det":"","price":"","notes":"","seen":false},
+{"id":"f4","t":"Façade","fam":"Mate","name":"Noir","det":"","price":"","notes":"","seen":false},
+{"id":"f5","t":"Façade","fam":"Mate","name":"Aspen","det":"","price":"","notes":"","seen":false},
+{"id":"f6","t":"Façade","fam":"Mate","name":"Black","det":"","price":"","notes":"","seen":false},
+{"id":"f7","t":"Façade","fam":"Mate","name":"Pannacotta","det":"","price":"","notes":"","seen":false},
+{"id":"f8","t":"Façade","fam":"Mate","name":"Ombre","det":"","price":"","notes":"","seen":false},
+{"id":"f9","t":"Façade","fam":"Mate","name":"Blanc mat","det":"","price":"","notes":"","seen":false},
+{"id":"f10","t":"Façade","fam":"Mate","name":"Deep Sea","det":"","price":"","notes":"","seen":false},
+{"id":"f11","t":"Façade","fam":"Mate","name":"Taupe mat","det":"","price":"","notes":"","seen":false},
+{"id":"f12","t":"Façade","fam":"Mate","name":"Soft grey","det":"","price":"","notes":"","seen":false},
+{"id":"f13","t":"Façade","fam":"Mate","name":"Forest","det":"","price":"","notes":"","seen":false},
+{"id":"f14","t":"Façade","fam":"Mate","name":"Agave","det":"","price":"","notes":"","seen":false},
+{"id":"f15","t":"Façade","fam":"Mate","name":"Neptune","det":"","price":"","notes":"","seen":false},
+{"id":"f16","t":"Façade","fam":"Mate","name":"Spicy","det":"","price":"","notes":"","seen":false},
+{"id":"f17","t":"Façade","fam":"Mate","name":"Écume","det":"","price":"","notes":"","seen":false},
+{"id":"f18","t":"Façade","fam":"Laquée","name":"Black Bird","det":"","price":"","notes":"","seen":false},
+{"id":"f19","t":"Façade","fam":"Laquée","name":"Litchi","det":"","price":"","notes":"","seen":false},
+{"id":"f20","t":"Façade","fam":"Laquée","name":"Blanc","det":"","price":"","notes":"","seen":false},
+{"id":"f21","t":"Façade","fam":"Laquée","name":"Carmen","det":"","price":"","notes":"","seen":false},
+{"id":"f22","t":"Façade","fam":"Laquée","name":"Shadow","det":"","price":"","notes":"","seen":false},
+{"id":"f23","t":"Façade","fam":"Laquée","name":"Misty blue","det":"","price":"","notes":"","seen":false},
+{"id":"f24","t":"Façade","fam":"Laquée","name":"Cactus","det":"","price":"","notes":"","seen":false},
+{"id":"f25","t":"Façade","fam":"Laquée","name":"Calédonie","det":"","price":"","notes":"","seen":false},
+{"id":"f26","t":"Façade","fam":"Laquée","name":"Sauge","det":"","price":"","notes":"","seen":false},
+{"id":"f27","t":"Façade","fam":"Laquée","name":"Paon","det":"","price":"","notes":"","seen":false},
+{"id":"f28","t":"Façade","fam":"Laquée","name":"Sky","det":"","price":"","notes":"","seen":false},
+{"id":"f29","t":"Façade","fam":"Laquée","name":"Green oasis","det":"","price":"","notes":"","seen":false},
+{"id":"f30","t":"Façade","fam":"Laquée","name":"Pétale de rose","det":"","price":"","notes":"","seen":false},
+{"id":"f31","t":"Façade","fam":"Unie brillante","name":"Blanc brillant","det":"","price":"","notes":"","seen":false},
+{"id":"f32","t":"Façade","fam":"Unie brillante","name":"Storm","det":"","price":"","notes":"","seen":false},
+{"id":"f33","t":"Façade","fam":"Décor bois","name":"Chêne honey","det":"","price":"","notes":"","seen":false},
+{"id":"f34","t":"Façade","fam":"Décor bois","name":"Steel oak","det":"","price":"","notes":"","seen":false},
+{"id":"f35","t":"Façade","fam":"Décor bois","name":"Viking oak","det":"","price":"","notes":"","seen":false},
+{"id":"f36","t":"Façade","fam":"Décor bois","name":"Frêne sablé","det":"","price":"","notes":"","seen":false},
+{"id":"f37","t":"Façade","fam":"Décor bois","name":"Chêne moka","det":"","price":"","notes":"","seen":false},
+{"id":"f38","t":"Façade","fam":"Décor bois","name":"Darwin","det":"","price":"","notes":"","seen":false},
+{"id":"f39","t":"Façade","fam":"Décor bois","name":"Hipster wood","det":"","price":"","notes":"","seen":false},
+{"id":"f40","t":"Façade","fam":"Décor bois","name":"Osani oak","det":"","price":"","notes":"","seen":false},
+{"id":"f41","t":"Façade","fam":"Décor bois","name":"Chêne timber","det":"","price":"","notes":"","seen":false},
+{"id":"f42","t":"Façade","fam":"Bois massif","name":"Chêne honey massif","det":"","price":"","notes":"","seen":false},
+{"id":"f43","t":"Façade","fam":"Bois massif","name":"Soft oak","det":"","price":"","notes":"","seen":false},
+{"id":"f44","t":"Façade","fam":"Inox, béton et métal","name":"Steam","det":"","price":"","notes":"","seen":false},
+{"id":"f45","t":"Façade","fam":"Inox, béton et métal","name":"Vénus","det":"","price":"","notes":"","seen":false},
+{"id":"f46","t":"Façade","fam":"Inox, béton et métal","name":"Silex","det":"","price":"","notes":"","seen":false},
+{"id":"f47","t":"Façade","fam":"Verre et miroir","name":"Verre transparent","det":"","price":"","notes":"","seen":false},
+{"id":"f48","t":"Façade","fam":"Verre et miroir","name":"Miroir bronze","det":"","price":"","notes":"","seen":false},
+{"id":"f49","t":"Façade","fam":"Pimp (motifs)","name":"Étoiles","det":"","price":"","notes":"","seen":false},
+{"id":"f50","t":"Façade","fam":"Pimp (motifs)","name":"Feuillage","det":"","price":"","notes":"","seen":false},
+{"id":"f51","t":"Façade","fam":"Pimp (motifs)","name":"Fleurs géométriques","det":"","price":"","notes":"","seen":false},
+{"id":"f52","t":"Façade","fam":"Pimp (motifs)","name":"Gingko","det":"","price":"","notes":"","seen":false},
+{"id":"f53","t":"Façade","fam":"Pimp (motifs)","name":"Marguerite","det":"","price":"","notes":"","seen":false},
+{"id":"f54","t":"Façade","fam":"Pimp (motifs)","name":"Mosaïque","det":"","price":"","notes":"","seen":false},
+{"id":"f55","t":"Façade","fam":"Pimp (motifs)","name":"Perce neige","det":"","price":"","notes":"","seen":false},
+{"id":"f56","t":"Façade","fam":"Pimp (motifs)","name":"Retro flowers","det":"","price":"","notes":"","seen":false},
+{"id":"f57","t":"Façade","fam":"Pimp (motifs)","name":"Vitrofloro","det":"","price":"","notes":"","seen":false},
+{"id":"f58","t":"Façade","fam":"Haut déco et vitré","name":"Trendy","det":"Façade de meuble haut déco et vitre","price":"","notes":"","seen":false}
+]}
+</script>
+
+<script id="page-script">
+(function(){
+  var data; try{ data = JSON.parse(document.getElementById('page-data').textContent); }catch(e){ data={rows:[]}; }
+  try{ var sv=JSON.parse(localStorage.getItem('cuisinella-data-v1')||'null'); if(sv&&Array.isArray(sv.rows)) data.rows=sv.rows; }catch(e){}
+  var rows = data.rows;
+  var S = {tab:'cat', q:'', fam:'Tout', dirty:false, saving:false, open:null, adding:false, mode:'fam', quiz:null, ok:0, tot:0, streak:0};
+  var $ = function(id){return document.getElementById(id);};
+  var esc = function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  var TITLES = {cat:'Catalogue', quiz:'Réviser', me:'Mon suivi'};
+  var GROUP = {Gamme:'Gammes de structure','Modèle':'Modèles phares','Façade':'Façades et coloris'};
+  try{ var st = JSON.parse(localStorage.getItem('cuisinella-ui')||'{}'); if(st.tab) S.tab=st.tab; if(st.fam) S.fam=st.fam; }catch(e){}
+  function remember(){ try{ localStorage.setItem('cuisinella-ui', JSON.stringify({tab:S.tab,fam:S.fam})); }catch(e){} }
+
+  function fams(){ var o=[]; rows.forEach(function(r){ if(o.indexOf(r.fam)<0) o.push(r.fam); }); return o; }
+  function byId(id){ for(var i=0;i<rows.length;i++) if(rows[i].id===id) return rows[i]; return null; }
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+
+  /* ---------- tabs ---------- */
+  function showTab(){
+    ['cat','quiz','me'].forEach(function(t){ $('v-'+t).hidden = t!==S.tab; });
+    document.querySelectorAll('.tabs [data-tab]').forEach(function(b){ b.setAttribute('aria-selected', b.getAttribute('data-tab')===S.tab); });
+    $('title').textContent = TITLES[S.tab];
+    $('fab').hidden = S.tab!=='cat';
+    if(S.tab==='cat') renderCat(); else if(S.tab==='quiz'){ if(!S.quiz) newQ(); renderQuiz(); } else renderMe();
+  }
+  document.querySelector('.tabs').addEventListener('click',function(e){
+    var b=e.target.closest('[data-tab]'); if(!b) return; S.tab=b.getAttribute('data-tab'); remember(); showTab(); window.scrollTo(0,0);
+  });
+
+  /* ---------- catalogue ---------- */
+  function renderChips(){
+    var f=fams(); if(S.fam!=='Tout' && f.indexOf(S.fam)<0) S.fam='Tout';
+    var h='<button class="chip" type="button" data-fam="Tout" aria-pressed="'+(S.fam==='Tout')+'">Tout<small>'+rows.length+'</small></button>';
+    f.forEach(function(x){ var n=rows.filter(function(r){return r.fam===x;}).length;
+      h+='<button class="chip" type="button" data-fam="'+esc(x)+'" aria-pressed="'+(S.fam===x)+'">'+esc(x)+'<small>'+n+'</small></button>'; });
+    $('chips').innerHTML=h;
+  }
+  function match(r){
+    if(S.fam!=='Tout' && r.fam!==S.fam) return false;
+    var q=S.q.trim().toLowerCase(); if(!q) return true;
+    return [r.name,r.fam,r.det,r.price,r.notes].join(' ').toLowerCase().indexOf(q)>=0;
+  }
+  function card(r){
+    var big = r.t!=='Façade';
+    return '<button type="button" class="card'+(r.seen?' seen':'')+(big?' big':'')+'" data-id="'+esc(r.id)+'">'+
+      (r.seen?'<span class="tick" aria-label="Vu">✓</span>':'')+
+      '<span class="n">'+esc(r.name)+'</span>'+
+      '<span class="f">'+esc(r.fam)+'</span>'+
+      (big && r.det?'<span class="d">'+esc(r.det)+'</span>':'')+
+      (r.price?'<span class="p">'+esc(r.price)+'</span>':'')+
+    '</button>';
+  }
+  function renderCat(){
+    renderChips();
+    var vis=rows.filter(match);
+    if(!vis.length){ $('catList').innerHTML='<div class="empty">Rien ne correspond. Change la recherche ou le filtre, ou ajoute-le avec le bouton +.</div>'; return; }
+    var h='', order=['Gamme','Modèle','Façade'];
+    order.concat(vis.map(function(r){return r.t;}).filter(function(t){return order.indexOf(t)<0;})).forEach(function(t,i,arr){
+      if(arr.indexOf(t)!==i) return;
+      var g=vis.filter(function(r){return r.t===t;}); if(!g.length) return;
+      h+='<h2 class="sec">'+(GROUP[t]||esc(t))+'</h2><div class="grid">'+g.map(card).join('')+'</div>';
+    });
+    $('catList').innerHTML=h;
+  }
+  $('chips').addEventListener('click',function(e){ var b=e.target.closest('[data-fam]'); if(!b) return; S.fam=b.getAttribute('data-fam'); remember(); renderCat(); });
+  $('q').addEventListener('input',function(e){ S.q=e.target.value; renderCat(); });
+  $('catList').addEventListener('click',function(e){ var c=e.target.closest('[data-id]'); if(c) openSheet(c.getAttribute('data-id')); });
+  $('fab').addEventListener('click',function(){ openAdd(); });
+
+  /* ---------- sheet ---------- */
+  function closeSheet(){ $('sheet').hidden=true; $('scrim').hidden=true; S.open=null; S.adding=false; if(S.tab==='cat') renderCat(); else if(S.tab==='me') renderMe(); }
+  function openSheet(id){
+    var r=byId(id); if(!r) return; S.open=id;
+    $('sheet').innerHTML='<div class="grab"></div>'+
+      '<div><span class="pill'+(r.t==='Façade'?'':' g')+'">'+esc(r.fam)+'</span></div>'+
+      '<h2 id="sheetTitle">'+esc(r.name)+'</h2>'+
+      (r.det?'<p class="note" style="font-size:14px;margin:0">'+esc(r.det)+'</p>':'')+
+      '<label class="switch" for="sSeen">Vu en magasin<input type="checkbox" id="sSeen" '+(r.seen?'checked':'')+'></label>'+
+      '<div class="fld"><label for="sPrice">Prix ou repère</label><input type="text" id="sPrice" value="'+esc(r.price)+'" placeholder="ex. à partir de 3 500 € l’implantation type"></div>'+
+      '<div class="fld"><label for="sNotes">Mes notes</label><textarea id="sNotes" placeholder="Argument de vente, avec quoi l’associer, remarques de l’équipe…">'+esc(r.notes)+'</textarea></div>'+
+      '<div class="actions">'+(r.custom?'<button type="button" class="btn-danger" id="sDel">Supprimer</button>':'')+'<button type="button" class="btn-main" id="sClose">Fermer</button></div>';
+    $('scrim').hidden=false; $('sheet').hidden=false;
+    $('sSeen').addEventListener('change',function(e){ r.seen=e.target.checked; dirty(); });
+    $('sPrice').addEventListener('input',function(e){ r.price=e.target.value; dirty(); });
+    $('sNotes').addEventListener('input',function(e){ r.notes=e.target.value; dirty(); });
+    $('sClose').addEventListener('click',closeSheet);
+    if(r.custom) $('sDel').addEventListener('click',function(){
+      var b=$('sDel'); if(b.getAttribute('data-sure')){ rows=rows.filter(function(x){return x.id!==id;}); data.rows=rows; dirty(); closeSheet(); }
+      else { b.setAttribute('data-sure','1'); b.textContent='Confirmer la suppression'; }
+    });
+  }
+  function openAdd(){
+    S.adding=true;
+    var opts=fams().map(function(f){return '<option value="'+esc(f)+'">';}).join('');
+    $('sheet').innerHTML='<div class="grab"></div><h2 id="sheetTitle">Ajouter</h2>'+
+      '<form id="addF" style="display:flex;flex-direction:column;gap:12px">'+
+      '<div class="fld"><label for="aName">Nom</label><input type="text" id="aName" required placeholder="ex. Ombre Soft"></div>'+
+      '<div class="fld"><label for="aFam">Famille</label><input type="text" id="aFam" list="famOpts" required placeholder="ex. Mate, Modèle phare…"><datalist id="famOpts">'+opts+'</datalist></div>'+
+      '<div class="fld"><label for="aDet">Détails</label><input type="text" id="aDet" placeholder="Matière, style…"></div>'+
+      '<div class="fld"><label for="aPrice">Prix ou repère</label><input type="text" id="aPrice"></div>'+
+      '<div class="actions"><button type="button" class="btn-ghost" id="aCancel">Annuler</button><button type="submit" class="btn-main">Ajouter</button></div></form>';
+    $('scrim').hidden=false; $('sheet').hidden=false;
+    $('aCancel').addEventListener('click',closeSheet);
+    $('addF').addEventListener('submit',function(e){
+      e.preventDefault(); var name=$('aName').value.trim(), fam=$('aFam').value.trim(); if(!name||!fam) return;
+      var ex=rows.filter(function(r){return r.fam===fam;})[0];
+      var t = ex?ex.t:(/gamme/i.test(fam)?'Gamme':(/mod[eè]le/i.test(fam)?'Modèle':'Façade'));
+      var r={id:'c'+Date.now(),t:t,fam:fam,name:name,det:$('aDet').value.trim(),price:$('aPrice').value.trim(),notes:'',seen:false,custom:true};
+      var idx=-1; rows.forEach(function(x,i){ if(x.fam===fam) idx=i; }); if(idx>=0) rows.splice(idx+1,0,r); else rows.push(r);
+      data.rows=rows; dirty(); closeSheet();
+    });
+  }
+  $('scrim').addEventListener('click',closeSheet);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !$('sheet').hidden) closeSheet(); });
+
+  /* ---------- quiz ---------- */
+  function pool(){ return rows.filter(function(r){return r.t==='Façade';}); }
+  function newQ(){
+    var p=pool(), f=[]; p.forEach(function(r){ if(f.indexOf(r.fam)<0) f.push(r.fam); });
+    if(p.length<4 || f.length<2){ S.quiz=null; return; }
+    var r=p[Math.floor(Math.random()*p.length)];
+    if(S.mode==='fam'){
+      var others=shuffle(f.filter(function(x){return x!==r.fam;})).slice(0,3);
+      S.quiz={ask:r.name, label:'À quelle famille appartient ce coloris ?', answer:r.fam, options:shuffle(others.concat([r.fam])), picked:null};
+    } else {
+      var wrong=shuffle(p.filter(function(x){return x.fam!==r.fam;})).slice(0,3).map(function(x){return x.name;});
+      S.quiz={ask:r.fam, label:'Lequel de ces coloris est dans cette famille ?', answer:r.name, options:shuffle(wrong.concat([r.name])), picked:null};
+    }
+  }
+  function renderQuiz(){
+    var q=S.quiz;
+    if(!q){ $('quiz').innerHTML='<div class="empty">Pas assez de coloris pour réviser.</div>'; $('score').innerHTML=''; return; }
+    var h='<div class="qlabel">'+esc(q.label)+'</div><div class="qword">'+esc(q.ask)+'</div><div class="opts">';
+    q.options.forEach(function(o){
+      var cls='opt'; if(q.picked){ if(o===q.answer) cls+=' ok'; else if(o===q.picked) cls+=' ko'; }
+      h+='<button type="button" class="'+cls+'" data-opt="'+esc(o)+'"'+(q.picked?' disabled':'')+'>'+esc(o)+'</button>';
+    });
+    h+='</div>';
+    if(q.picked) h+='<button type="button" class="next" id="nextQ">'+(q.picked===q.answer?'Bien vu ! Question suivante':'Question suivante')+'</button>';
+    $('quiz').innerHTML=h;
+    $('score').innerHTML='<span>Score <b>'+S.ok+' / '+S.tot+'</b></span><span>Série <b>'+S.streak+'</b></span>';
+  }
+  $('quiz').addEventListener('click',function(e){
+    var o=e.target.closest('[data-opt]');
+    if(o && S.quiz && !S.quiz.picked){ var v=o.getAttribute('data-opt'); S.quiz.picked=v; S.tot++; if(v===S.quiz.answer){S.ok++;S.streak++;} else S.streak=0; renderQuiz(); var n=$('nextQ'); if(n) n.focus(); return; }
+    if(e.target.closest('#nextQ')){ newQ(); renderQuiz(); }
+  });
+  $('modes').addEventListener('click',function(e){
+    var b=e.target.closest('[data-mode]'); if(!b) return; S.mode=b.getAttribute('data-mode');
+    document.querySelectorAll('#modes [data-mode]').forEach(function(x){ x.setAttribute('aria-pressed', x===b); });
+    newQ(); renderQuiz();
+  });
+
+  /* ---------- suivi ---------- */
+  function renderMe(){
+    var seen=rows.filter(function(r){return r.seen;}).length, pr=rows.filter(function(r){return r.price.trim();}).length;
+    var pct=rows.length?Math.round(seen/rows.length*100):0;
+    $('meter').innerHTML='<div class="row"><span>Vus en magasin</span><b>'+seen+' / '+rows.length+'</b></div><div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="row"><span>Avec un prix noté</span><b>'+pr+'</b></div>';
+    $('famStats').innerHTML=fams().map(function(f){
+      var g=rows.filter(function(r){return r.fam===f;}), s=g.filter(function(r){return r.seen;}).length, p=Math.round(s/g.length*100);
+      return '<div class="it"><span>'+esc(f)+'</span><div class="bar"><i style="width:'+p+'%"></i></div><span class="num">'+s+'/'+g.length+'</span></div>';
+    }).join('');
+    var n=rows.filter(function(r){return r.price.trim()||r.notes.trim();});
+    $('noted').innerHTML = n.length ? '<div class="grid">'+n.map(function(r){
+      return '<button type="button" class="card big" data-id="'+esc(r.id)+'"><span class="n">'+esc(r.name)+'</span><span class="f">'+esc(r.fam)+'</span>'+
+        (r.notes?'<span class="d">'+esc(r.notes)+'</span>':'')+(r.price?'<span class="p">'+esc(r.price)+'</span>':'')+'</button>';
+    }).join('')+'</div>' : '<div class="empty">Aucune note pour l’instant. Ouvre une fiche dans le Catalogue pour noter un prix ou une remarque.</div>';
+  }
+  $('noted').addEventListener('click',function(e){ var c=e.target.closest('[data-id]'); if(c) openSheet(c.getAttribute('data-id')); });
+
+  /* ---------- sauvegarde locale ---------- */
+  var KEY='cuisinella-data-v1', tmr=null;
+  function dirty(){ persist(); }
+  function persist(){
+    try{ localStorage.setItem(KEY, JSON.stringify({rows:rows, at:Date.now()})); flash('Enregistré'); }
+    catch(e){ flash('Impossible d’enregistrer sur ce téléphone', true); }
+  }
+  function flash(t,bad){ var s=$('saveState'); s.textContent=t; s.className=bad?'toast':'saved'; clearTimeout(flash.t); if(!bad) flash.t=setTimeout(function(){ s.textContent=''; },1500); }
+  function renderSave(){}
+  /* export / import des notes */
+  function exportData(){
+    var txt=JSON.stringify({app:'gammes-cuisinella',v:1,rows:rows});
+    var blob=new Blob([txt],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    var d=new Date(); a.download='cuisinella-sauvegarde-'+d.toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    flash('Sauvegarde téléchargée');
+  }
+  function importData(file){
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{ var o=JSON.parse(rd.result); if(!o||!Array.isArray(o.rows)) throw 0;
+        rows=o.rows; data.rows=rows; persist(); showTab(); flash('Sauvegarde restaurée'); }
+      catch(e){ flash('Ce fichier n’est pas une sauvegarde de l’appli', true); }
+    };
+    rd.readAsText(file);
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest('#exp')) exportData();
+    if(e.target.closest('#impBtn')) $('imp').click();
+  });
+  document.addEventListener('change',function(e){ if(e.target.id==='imp' && e.target.files[0]){ importData(e.target.files[0]); e.target.value=''; } });
+
+  /* ---------- plein écran ---------- */
+  (function(){
+    var root=document.documentElement, b=$('fs');
+    var req=root.requestFullscreen||root.webkitRequestFullscreen;
+    var fsEl=function(){return document.fullscreenElement||document.webkitFullscreenElement;};
+    var exit=function(){return (document.exitFullscreen||document.webkitExitFullscreen).call(document);};
+    if(!req || !(document.fullscreenEnabled||document.webkitFullscreenEnabled)) return;
+    b.hidden=false;
+    b.addEventListener('click',function(){
+      try{
+        var p = fsEl() ? exit() : req.call(root);
+        if(p && p.catch) p.catch(function(){ b.hidden=true; });
+      }catch(e){ b.hidden=true; }
+    });
+    var upd=function(){ b.setAttribute('aria-label', fsEl()?'Quitter le plein écran':'Plein écran'); };
+    document.addEventListener('fullscreenchange',upd); document.addEventListener('webkitfullscreenchange',upd);
+  })();
+
+  showTab(); renderSave();
+})();
+</script>
+<script>if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>
