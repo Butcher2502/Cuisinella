@@ -1,0 +1,42 @@
+<title>Ouverture L'Ancora × Dumani</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:wght@400;600&display=swap">
+<style>
+/* Layout: une colonne sombre et dorée, un bloc par fichier */
+:root{--bg:#0e0b07;--panel:#18130c;--fg:#f3e9d6;--muted:#b9a789;--gold:#d9a84a;--line:#3a2e1b;
+--display:"Cinzel",Georgia,serif;--body:"Montserrat",system-ui,sans-serif;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5;
+padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+main{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1{font-family:var(--display);color:var(--gold);font-weight:800;font-size:clamp(1.6rem,6vw,2.4rem);letter-spacing:.06em;margin:0;text-align:center;text-wrap:balance}
+.sub{text-align:center;color:var(--muted);margin:6px 0 0}
+.how{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:.95rem}
+.how strong{color:var(--gold)}
+section{display:flex;flex-direction:column;gap:10px}
+h2{font-family:var(--display);font-weight:600;font-size:1.15rem;letter-spacing:.08em;margin:0;color:var(--fg)}
+.meta{color:var(--muted);font-size:.85rem;margin:0;text-transform:uppercase;letter-spacing:.08em}
+img,video{display:block;max-width:100%;width:100%;border-radius:8px;border:1px solid var(--line);background:#000}
+.story img,.story video{max-width:420px;margin:0 auto}
+</style>
+<main>
+  <header>
+    <h1>L'Ancora × Dumani</h1>
+    <p class="sub">Soirée d'ouverture · samedi 21 novembre · concert 21h</p>
+  </header>
+  <p class="how"><strong>Pour enregistrer :</strong> sur téléphone, appuie longuement sur une image ou sur la vidéo puis choisis « Enregistrer ». Sur ordinateur, clic droit puis « Enregistrer sous ».</p>
+  <section class="story">
+    <h2>Vidéo Reel</h2>
+    <p class="meta">9:16 · 15 secondes · sans musique</p>
+    <video src="video_reel_ouverture_dumani.mp4" controls playsinline preload="metadata" poster="visuel_story_ouverture_dumani.jpg"></video>
+  </section>
+  <section class="story">
+    <h2>Visuel story</h2>
+    <p class="meta">9:16 · 1080 × 1920</p>
+    <img src="visuel_story_ouverture_dumani.jpg" alt="Visuel story de la soirée d'ouverture L'Ancora avec Dumani">
+  </section>
+  <section>
+    <h2>Visuel post</h2>
+    <p class="meta">4:5 · 1080 × 1350</p>
+    <img src="visuel_post_4x5_ouverture_dumani.jpg" alt="Visuel post 4:5 de la soirée d'ouverture L'Ancora avec Dumani">
+  </section>
+</main>
