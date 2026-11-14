@@ -292,45 +292,48 @@ const CIEL={soleil:["Soleil","M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M1
 function icoCiel(k){const c=CIEL[k]||CIEL.couvert;const cloud='<path d="M7 17h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.4A3.3 3.3 0 0 0 7 17z"/>';
  return `<svg class="wx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" role="img" aria-label="${c[0]}">${c[2]==="circle"?'<circle cx="12" cy="12" r="4"/>':cloud}${c[1]?`<path d="${c[1]}"/>`:""}</svg>`}
 const zoneOf=c=>ZONE1.includes(c)?1:ZONE2.includes(c)?2:3;
-const PRIX_VERIF=14, PRIX_PLAN=118, PRIX_VERIF_PLAN=25; /* grille Tarifs OmniService et Tarifs plans */
+const PRIX_VERIF=13, PRIX_PLAN=103, PRIX_VERIF_PLAN=25; /* référence : outil Chiffrage OmniService (vérif. pression permanente, plan A3 PVC posé) */
 
+/* Grille de référence = Chiffrage OmniService (15/10/2026). Lignes marquées « fiche Tarifs » : absentes du Chiffrage, reprises de la fiche Tarifs. */
 const TARIFS=[
- {g:"Forfaits tout compris (déplacement zone 1 inclus)",cat:"svc",items:[
-  ["Particulier : vérification d'1 extincteur à domicile",45,"12 € par extincteur supplémentaire"],
-  ["Petit commerce : jusqu'à 5 extincteurs",79,"vérification annuelle, rapport, conseils"],
-  ["Commerce / entreprise : 6 à 15 extincteurs (par appareil)",11,"au-delà de 15 : devis"]]},
  {g:"Vérification annuelle (par appareil)",cat:"svc",items:[
-  ["Eau ou poudre ≤ 9 kg, pression permanente",14,""],
-  ["Eau ou poudre ≤ 9 kg, pression auxiliaire",18,"joint de tête et scellé compris"],
-  ["CO₂ 2 kg",18,"pesée incluse"],["CO₂ 5 kg",22,"pesée incluse"],["Extincteur sur roues 25 à 50 kg",35,""],
-  ["Extincteur supplémentaire (particulier)",12,""]]},
+  ["Vérification pression permanente",13,"manomètre, pesée, état, étiquette"],
+  ["Vérification pression auxiliaire",16,"ouverture, cartouche, joint, replombage"],
+  ["Remplacement cartouche",28,"sparklet + main d'œuvre"],
+  ["CO₂ 2 kg",18,"fiche Tarifs"],["CO₂ 5 kg",22,"fiche Tarifs"],["Extincteur sur roues 25 à 50 kg",35,"fiche Tarifs"]]},
  {g:"Déplacement",cat:"svc",items:[
-  ["Zone 1 : jusqu'à 20 km de Sotta",35,"Porto-Vecchio, Figari, Bonifacio, Lecci…"],
-  ["Zone 2 : 20 à 50 km",60,"Sartène, Propriano, Zonza, Sainte-Lucie…"]]},
- {g:"Entretien et recharge (par appareil)",cat:"svc",items:[
+  ["Forfait déplacement (moins de 5 appareils)",45,"offert au-delà de 5 appareils"],
+  ["Zone 2 : 20 à 50 km",60,"fiche Tarifs : Sartène, Propriano, Sainte-Lucie, Conca…"]]},
+ {g:"Forfaits particuliers et petits commerces (fiche Tarifs)",cat:"svc",items:[
+  ["Particulier : vérification d'1 extincteur à domicile",45,"12 € par extincteur supplémentaire"],
+  ["Extincteur supplémentaire (particulier)",12,""],
+  ["Petit commerce : jusqu'à 5 extincteurs",79,""],
+  ["Commerce / entreprise : 6 à 15 extincteurs (par appareil)",11,""]]},
+ {g:"Entretien et recharge (fiche Tarifs)",cat:"svc",items:[
   ["Maintenance additionnelle (5 ans), eau ou poudre",55,""],["Recharge après utilisation, eau 6 L",55,""]]},
- {g:"Pièces et prestations annexes",cat:"vente",items:[
-  ["Goupille et scellé",8,""],["Changement de joint de tête",12,"pose incluse"],["Support mural et fixation",12,""],
-  ["Panneau de signalisation extincteur",9,""],["Reprise et recyclage d'un extincteur réformé",15,""]]},
- {g:"Extincteurs neufs posés (support et signalisation inclus)",cat:"vente",items:[
-  ["Eau + additif 6 L",119,"bureaux, commerces, habitations"],["Poudre ABC 6 kg",115,"garages, ateliers"],
-  ["Poudre ABC 6 kg, dès 4 appareils (par appareil)",100,""],["CO₂ 2 kg",129,"tableaux électriques"],["CO₂ 5 kg",199,""],
-  ["Extincteur 1 ou 2 kg véhicule, bateau ou cuisine",65,""],["Couverture anti-feu",35,""]]},
- {g:"Plans d'évacuation posés (relevé, dessin, impression, pose)",cat:"plan",items:[
-  ["Évacuation A4 PVC (chambre)",83,""],["Évacuation A3 PVC (étage, le plus demandé)",118,""],["Évacuation A2 PVC",132,""],
-  ["Évacuation A3 photoluminescent",148,""],["Évacuation A3 Dibond",156,""],["Évacuation A3 plexiglas",168,""]]},
- {g:"Plans d'intervention posés (pancarte inaltérable)",cat:"plan",items:[
-  ["Intervention A3 Dibond",207,"le choix habituel"],["Intervention A2 Dibond (multi-niveaux)",243,""],
-  ["Intervention A3 photoluminescent",199,""],["Intervention A3 plexiglas",219,""]]},
- {g:"Suivi des plans",cat:"plan",items:[
-  ["Vérification annuelle d'un plan",25,""],["Vérification groupée (≥ 5 plans ou avec la tournée)",18,""],
-  ["Mise à jour d'un plan existant (dès)",93,""],["Cadre aluminium",45,""]]},
- {g:"Découpe de viande à façon",cat:"svc",items:[
+ {g:"Matériel vendu et posé",cat:"vente",items:[
+  ["Poudre ABC 2 kg",65,""],["Poudre ABC 6 kg",115,""],["Poudre ABC 9 kg",129,""],
+  ["Eau + additif 6 L",119,""],["Eau + additif 9 L",139,""],["CO₂ 2 kg",129,""],["CO₂ 5 kg",230,""],
+  ["Eau antigel 6 L",149,""],["Lithium 6 L",290,""],["Couverture anti-feu",35,""],["Support mural",12,""],
+  ["Housse nylon",19,""],["Coffret PVC",79,""],["Bloc BAES",69,""],["Alarme type 4",99,""]]},
+ {g:"Pièces annexes (fiche Tarifs)",cat:"vente",items:[
+  ["Goupille et scellé",8,""],["Changement de joint de tête",12,"pose incluse"],["Panneau de signalisation extincteur",9,""],["Reprise et recyclage d'un extincteur réformé",15,""]]},
+ {g:"Plans d'évacuation (forfait relevé, dessin, support, port et pose)",cat:"plan",items:[
+  ["Évacuation A4 PVC rigide (chambre)",67,""],["Évacuation A3 PVC rigide (étage)",103,"le plus courant"],["Évacuation A2 PVC rigide",239,""],
+  ["Évacuation A3 photoluminescent",146,""],["Évacuation A3 Dibond / alu",131,""],["Évacuation A3 PVC sous cadre alu",110,""],
+  ["Évacuation A3 plexiglas",154,""],["Évacuation A3 vinyle",87,"coût du support estimé"],["Plan A3 en PDF seul (le client imprime)",65,""],
+  ["Plan A3 PVC identique en lot (pose seule)",51,"plan déjà dessiné"]]},
+ {g:"Plans d'intervention (+ 20 € par plan)",cat:"plan",items:[
+  ["Intervention A3 Dibond / alu",151,"inaltérable, le choix habituel"],["Intervention A2 Dibond / alu",320,""],
+  ["Intervention A3 photoluminescent",166,""],["Intervention A3 plexiglas",174,""]]},
+ {g:"Suivi des plans (fiche Tarifs)",cat:"plan",items:[
+  ["Vérification annuelle d'un plan",25,""],["Vérification groupée (≥ 5 plans ou avec la tournée)",18,""],["Mise à jour d'un plan existant (dès)",93,""]]},
+ {g:"Découpe de viande à façon (fiche Tarifs)",cat:"svc",items:[
   ["Professionnels : à l'heure",35,""],["Professionnels : journée (7 h)",230,""],["Agneau ou cabri entier",35,""],
   ["Porc ou sanglier (au kg)",1.5,""],["Quartier de bœuf ou veau (au kg)",1.2,""]]}
 ];
-/* taux de prélèvement repris de ton outil Chiffrage — à revérifier sur autoentrepreneur.urssaf.fr */
-const PREL={vente:0.134,svc:0.2368,plan:0.2368};
+/* taux de prélèvement de l'outil Chiffrage — à revérifier sur autoentrepreneur.urssaf.fr */
+const PREL={vente:0.134,svc:0.2368,plan:0.279};
 const CATL={vente:"Vente de marchandises",svc:"Prestation de services",plan:"Prestation de services"};
 
 const OUTILS=[
@@ -369,9 +372,9 @@ Je suis Frédéric Bichet, d'OmniService Sud Corse, installé à Sotta. Je véri
 Pour ${n}, je vous propose un état des lieux gratuit : je compte vos appareils, je contrôle les dates et l'implantation, et je vous remets un devis clair, sans engagement.
 
 Quelques repères :
-- vérification annuelle dès 14 € par appareil ;
+- vérification annuelle dès 13 € par appareil ;
 - forfait petit commerce 79 € jusqu'à 5 extincteurs, déplacement compris en zone 1 ;
-- plans d'évacuation A3 posés dès 118 € ;
+- plans d'évacuation A3 posés dès 103 € ;
 - contrat 3 ans : −10 % sur les vérifications.
 
 Je reste à votre disposition par mail.
@@ -402,7 +405,7 @@ let wxVille=lsGet("op-wx","Sotta"), tourCom=lsGet("op-tc",["Porto-Vecchio"]), to
 let V="accueil", openId=null, draft=null;
 const F=Object.assign({q:"",sec:"",com:"",st:"",zone:"",prio:"",tri:"pot"},lsGet("op-f",{}));
 let pipeSec=lsGet("op-ps","");
-let EST=lsGet("op-est",[]);
+let EST=lsGet("op-est2",[]);
 
 function profil(e){const p=(S.reg.profils&&S.reg.profils[e.secteur])||DEF_PROFILS[e.secteur]||DEF_PROFILS.Autre;
   return {ext:(e.ext!=null&&e.ext!=="")?+e.ext:p.ext, plans:(e.plans!=null&&e.plans!=="")?+e.plans:p.plans}}
@@ -546,13 +549,13 @@ function viewTarifs(){
   let tot=0,net=0;const per={vente:0,svc:0,plan:0};
   EST.forEach(l=>{const a=byK[l.k];const m=a.p*l.q;tot+=m;net+=m*(1-PREL[a.cat]);per[a.cat]+=m});
   return `<div class="vhead"><div><h1>Tarifs &amp; devis express</h1><p>Ta grille complète au même endroit, et un calcul rapide de ce que te laisse un devis une fois l'URSSAF payée.</p></div></div>
-  <div class="warnbox"><b>Deux grilles ne disent pas la même chose.</b> Ta fiche Tarifs (valable jusqu'au 31/12/2027) et ton outil Chiffrage diffèrent sur trois prix : vérification pression permanente 14 € contre 13 €, pression auxiliaire 18 € contre 16 €, CO₂ 5 kg neuf 199 € contre 230 €. Le déplacement est à 35 € en zone 1 d'un côté, 45 € de forfait sous 5 appareils de l'autre. Ici, c'est la fiche Tarifs qui sert de référence. Choisis la bonne et aligne l'autre.</div>
+  <div class="warnbox"><b>Grille de référence : ton outil Chiffrage OmniService.</b> Les lignes marquées « fiche Tarifs » n'existent pas dans le Chiffrage et viennent de ta fiche Tarifs. Attention, la fiche Tarifs et la grille des plans montrées aux clients affichent encore les anciens prix (vérification 14 € et 18 €, CO₂ 5 kg 199 €, plan A3 PVC 118 €…).</div>
   <div class="grid2" style="align-items:start">
     <section class="panel"><h2>Devis express</h2><p class="sub">Ajoute des lignes depuis la grille avec le bouton +. Le net est une estimation.</p>
       <div class="est">${EST.length?EST.map((l,i)=>{const a=byK[l.k];return `<div class="eline"><span>${esc(a.l)}<small style="display:block;color:var(--muted);font-size:12.5px">${CATL[a.cat]}</small></span>
         <input type="number" min="1" step="1" value="${l.q}" data-eq="${i}" aria-label="Quantité" id="eq${i}"><span class="p">${eur(a.p*l.q)}</span><button class="btn ghost sm" data-erm="${i}" aria-label="Retirer">×</button></div>`}).join(""):'<div class="empty">Aucune ligne. Touche + à côté d\'un prix pour l\'ajouter.</div>'}</div>
       <div class="etot"><div><span>Total client</span><b>${eur(tot)}</b></div><div><span>URSSAF estimée</span><b>${eur(tot-net)}</b></div><div><span>Il te reste</span><b>${eur(net)}</b></div></div>
-      <p class="note">Prélèvements repris de ton Chiffrage : vente 13,4 %, prestations 23,68 % (cotisations, versement libératoire, CFP, CMA). Les taux changent : vérifie-les sur autoentrepreneur.urssaf.fr. Le coût d'achat du matériel n'est pas déduit ici, utilise Chiffrage pour la marge exacte.</p>
+      <p class="note">Prélèvements repris de ton Chiffrage : vente 13,4 %, vérifications d’extincteurs 23,68 %, plans 27,9 %. Les taux changent : vérifie-les sur autoentrepreneur.urssaf.fr. Le coût d'achat du matériel n'est pas déduit ici, utilise Chiffrage pour la marge exacte.</p>
       <div class="btns"><button class="btn" data-ecopy ${EST.length?"":"disabled"}>Copier le récapitulatif</button><button class="btn ghost" data-eclear ${EST.length?"":"disabled"}>Vider</button><a class="btn navy" href="https://claude.ai/artifact/CPBXzGWk2ZKUVbG67SQkS9" target="_blank" rel="noopener">Faire le devis officiel ↗</a></div>
     </section>
     <div class="view" style="gap:14px">${TARIFS.map((g,gi)=>`<section class="panel"><h2>${esc(g.g)}</h2><div class="tbl"><table><tbody>${g.items.map((it,ii)=>`<tr><td>${esc(it[0])}${it[2]?`<small>${esc(it[2])}</small>`:""}</td><td class="p">${eur(it[1])}</td><td style="width:1%"><button class="btn sm" data-eadd="${gi}-${ii}" aria-label="Ajouter ${esc(it[0])} au devis express">+</button></td></tr>`).join("")}</tbody></table></div></section>`).join("")}
@@ -781,7 +784,7 @@ function bindAfter(){
   const rf=$("#regf");if(rf)rf.onsubmit=async ev=>{ev.preventDefault();if(!S.db)return;
     const profils={};SECTEURS.forEach((s,i)=>{profils[s]={ext:Math.max(0,+document.getElementById("pe"+i).value||0),plans:Math.max(0,+document.getElementById("pp"+i).value||0)}});
     try{await S.db.doc("reglages/main").set({objectif:Math.max(0,+$("#robj").value||0),profils});toast("Réglages enregistrés")}catch(e){toast("Enregistrement impossible pour l'instant")}};
-  document.querySelectorAll("[data-eq]").forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.eq;EST[i].q=Math.max(1,parseInt(inp.value,10)||1);lsSet("op-est",EST);render()});
+  document.querySelectorAll("[data-eq]").forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.eq;EST[i].q=Math.max(1,parseInt(inp.value,10)||1);lsSet("op-est2",EST);render()});
 }
 document.addEventListener("click",async ev=>{
   const t=ev.target.closest("button,a,g.mdot");if(!t)return;
@@ -795,9 +798,9 @@ document.addEventListener("click",async ev=>{
   if(ds.export!==undefined){exportCSV();return}
   if(ds.copy){const el=document.getElementById(ds.copy);if(el)copy(el.textContent);return}
   if(ds.copytxt!==undefined){copy(ds.copytxt);return}
-  if(ds.eadd){EST.push({k:ds.eadd,q:1});lsSet("op-est",EST);render();toast("Ajouté au devis express");return}
-  if(ds.erm!==undefined){EST.splice(+ds.erm,1);lsSet("op-est",EST);render();return}
-  if(ds.eclear!==undefined){EST=[];lsSet("op-est",EST);render();return}
+  if(ds.eadd){EST.push({k:ds.eadd,q:1});lsSet("op-est2",EST);render();toast("Ajouté au devis express");return}
+  if(ds.erm!==undefined){EST.splice(+ds.erm,1);lsSet("op-est2",EST);render();return}
+  if(ds.eclear!==undefined){EST=[];lsSet("op-est2",EST);render();return}
   if(ds.ecopy!==undefined){const all={};TARIFS.forEach((g,gi)=>g.items.forEach((it,ii)=>all[gi+"-"+ii]={l:it[0],p:it[1]}));let tot=0;
     const L=EST.map(l=>{const a=all[l.k];tot+=a.p*l.q;return l.q+" × "+a.l+" — "+eur(a.p*l.q)});
     copy(["OmniService Sud Corse — estimation"].concat(L,["","TOTAL : "+eur(tot),"TVA non applicable, art. 293 B du CGI.","Estimation indicative — seul le devis signé fait foi."]).join("\n"));return}
