@@ -1,0 +1,1176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1622">
+<title>OmniPilote</title>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout: poste de pilotage — rail de navigation à gauche sur ordinateur, barre d'onglets en bas sur téléphone ;
+   chaque vue est une colonne de blocs, les fiches s'ouvrent en panneau. Bleu nuit OmniService + rouge sécurité incendie. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#f5f7f9; --fg:#13283b; --muted:#566676; --line:#d9e0e7;
+  --navy:#0d3352; --navy-2:#164a73; --on-navy:#ffffff; --nav-muted:#a9c0d4;
+  --accent:#c62828; --accent-soft:#fbe9e7; --bar:#2f6a9a; --bar-soft:#dbe7f1;
+  --good:#1f7a4d; --good-soft:#e0f2e8; --warn:#9a5b00; --warn-soft:#fdf0d9; --bad:#b3261e; --bad-soft:#fbe4e2; --idle:#566676; --idle-soft:#e9edf1;
+  --display:"Archivo",system-ui,sans-serif; --body:"Source Sans 3",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --navw:220px; --tabh:64px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1622; --surface:#13222f; --sunk:#182a39; --fg:#e4ecf3; --muted:#9db0c1; --line:#263a4c;
+  --navy:#07121c; --navy-2:#11283c; --on-navy:#e4ecf3; --nav-muted:#8ea6ba;
+  --accent:#ff6f61; --accent-soft:#3a1c1a; --bar:#6aa6d6; --bar-soft:#1c3346;
+  --good:#6fd39b; --good-soft:#163527; --warn:#f0b65a; --warn-soft:#3a2b12; --bad:#ff8a80; --bad-soft:#3d1d1b; --idle:#9db0c1; --idle-soft:#1f3142; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1622; --surface:#13222f; --sunk:#182a39; --fg:#e4ecf3; --muted:#9db0c1; --line:#263a4c;
+  --navy:#07121c; --navy-2:#11283c; --on-navy:#e4ecf3; --nav-muted:#8ea6ba;
+  --accent:#ff6f61; --accent-soft:#3a1c1a; --bar:#6aa6d6; --bar-soft:#1c3346;
+  --good:#6fd39b; --good-soft:#163527; --warn:#f0b65a; --warn-soft:#3a2b12; --bad:#ff8a80; --bad-soft:#3d1d1b; --idle:#9db0c1; --idle-soft:#1f3142; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.15}
+
+/* navigation */
+nav.rail{position:fixed;left:0;top:0;bottom:0;width:var(--navw);background:var(--navy);color:var(--on-navy);display:flex;flex-direction:column;gap:4px;
+  padding:calc(18px + env(safe-area-inset-top,0px)) 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));z-index:20}
+.brand{padding:0 8px 16px;display:flex;align-items:center;gap:10px}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--display);font-weight:800;font-size:19px;display:block;letter-spacing:-.01em}
+.brand small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--nav-muted)}
+nav.rail a{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;color:var(--nav-muted);text-decoration:none;font-weight:600}
+nav.rail a svg{width:20px;height:20px;flex:none}
+nav.rail a[aria-current="page"]{background:var(--navy-2);color:var(--on-navy)}
+nav.rail a[aria-current="page"] svg{color:var(--accent)}
+nav.rail a:hover{color:var(--on-navy)}
+.rail .foot{margin-top:auto;font-size:12px;color:var(--nav-muted);padding:0 8px}
+.sync{display:inline-flex;align-items:center;gap:6px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--idle);display:inline-block}
+.sync.ok i{background:var(--good)} .sync.busy i{background:var(--warn)} .sync.off i{background:var(--bad)}
+.lbl-short{display:none}
+
+main{margin-left:var(--navw);padding-block:24px 48px;padding-left:max(24px, env(safe-area-inset-left,0px));padding-right:max(24px, env(safe-area-inset-right,0px));max-width:calc(var(--navw) + 1180px)}
+.view{display:flex;flex-direction:column;gap:18px;min-width:0}
+.vhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between}
+.vhead h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.015em}
+.vhead p{margin:4px 0 0;color:var(--muted)}
+
+@media (max-width:860px){
+  nav.rail{top:auto;right:0;width:auto;height:auto;flex-direction:row;justify-content:space-around;gap:0;
+    padding:6px max(6px, env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px, env(safe-area-inset-left,0px))}
+  .brand,.rail .foot{display:none}
+  nav.rail a{flex-direction:column;gap:2px;font-size:11px;padding:6px 2px;flex:1;min-width:0;text-align:center}
+  .lbl-long{display:none}.lbl-short{display:inline}
+  main{margin-left:0;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 28px)}
+  .mobile-sync{display:flex!important}
+}
+.mobile-sync{display:none;justify-content:flex-end;font-size:12px;color:var(--muted)}
+
+/* blocs */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel > h2{font-size:17px;font-weight:700}
+.panel .sub{color:var(--muted);font-size:14px;margin:-6px 0 0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media (max-width:1000px){.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left;cursor:pointer}
+.kpi:hover{border-color:var(--bar)}
+.kpi .k{font-size:13px;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .d{font-size:13px;color:var(--muted)}
+.kpi.alert{border-color:var(--bad);background:var(--bad-soft)}
+.kpi.alert .v{color:var(--bad)}
+.meter{height:8px;border-radius:4px;background:var(--bar-soft);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--bar);border-radius:4px}
+
+.season{display:flex;gap:14px;align-items:flex-start;background:var(--navy);color:var(--on-navy);border-radius:12px;padding:16px 18px}
+.season svg{width:28px;height:28px;flex:none;color:var(--accent);margin-top:2px}
+.season b{font-family:var(--display);font-size:17px;display:block;margin-bottom:2px}
+.season p{margin:0;color:var(--nav-muted);font-size:15px}
+.season p strong{color:var(--on-navy)}
+
+/* barres horizontales */
+.hbars{display:flex;flex-direction:column;gap:8px}
+.hb{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;cursor:default;border-radius:6px;padding:2px 4px;margin:0 -4px}
+.hb:hover{background:var(--sunk)}
+.hb .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .track{height:14px;position:relative}
+.hb .track i{position:absolute;left:0;top:0;bottom:0;background:var(--bar);border-radius:0 4px 4px 0;min-width:2px}
+.hb .v{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--fg);text-align:right;min-width:3.5em}
+button.hb{border:0;background:none;width:100%;text-align:left;cursor:pointer}
+
+/* listes */
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:11px 4px;border-top:1px solid var(--line);align-items:center;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;cursor:pointer;border-radius:0}
+.row:first-child{border-top:0}
+.row:hover{background:var(--sunk)}
+.row .t{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.row .s{color:var(--muted);font-size:13.5px;min-width:0;overflow-wrap:anywhere}
+.row .r{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.empty{color:var(--muted);padding:18px 4px;text-align:center}
+.empty b{display:block;color:var(--fg);font-family:var(--display);font-size:17px;margin-bottom:4px}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;background:var(--idle-soft);color:var(--idle)}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st-a_contacter{background:var(--idle-soft);color:var(--idle)}
+.st-contacte{background:var(--bar-soft);color:var(--bar)}
+.st-rdv{background:var(--warn-soft);color:var(--warn)}
+.st-devis{background:var(--accent-soft);color:var(--accent)}
+.st-gagne{background:var(--good-soft);color:var(--good)}
+.st-perdu{background:var(--idle-soft);color:var(--muted);text-decoration:line-through}
+.late{color:var(--bad);font-weight:700}
+.prio{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em}
+.prio.p1{color:var(--accent)}
+
+/* boutons & champs */
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--fg)}
+.btn:hover{border-color:var(--bar)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.navy{background:var(--navy-2);border-color:var(--navy-2);color:var(--on-navy)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted);min-width:0}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-width:0;font-size:15px}
+textarea{resize:vertical;min-height:80px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters input[type=search]{flex:1 1 220px;width:auto}
+.filters select{flex:0 1 auto;width:auto;max-width:100%}
+.count{font-size:14px;color:var(--muted)}
+@media (max-width:600px){.filters select{flex:1 1 calc(50% - 4px)}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy-2);border-color:var(--navy-2);color:var(--on-navy)}
+
+/* annuaire */
+.dir{display:flex;flex-direction:column}
+.dirow{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.2fr) minmax(0,1fr) 7em 7.5em 8.5em;gap:10px;align-items:center;padding:10px 6px;border-top:1px solid var(--line);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;cursor:pointer}
+.dirow:hover{background:var(--sunk)}
+.dirow.head{cursor:default;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;border-top:0}
+.dirow.head:hover{background:none}
+.dirow .t{font-weight:700;overflow-wrap:anywhere}
+.dirow .s{color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
+.dirow .n{text-align:right;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+@media (max-width:900px){
+  .dirow{grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+  .dirow.head{display:none}
+  .dirow .c-sec,.dirow .c-com{grid-column:1;font-size:13.5px;color:var(--muted)}
+  .dirow .c-pot{grid-column:2;grid-row:1}
+  .dirow .c-st{grid-column:2;grid-row:2;text-align:right}
+  .dirow .c-rel{grid-column:2;grid-row:3;text-align:right}
+}
+
+/* pipeline */
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0;align-self:start}
+.col h3{font-size:14px;display:flex;justify-content:space-between;gap:8px;align-items:center;padding:2px 4px}
+.col h3 small{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;width:100%}
+.card:hover{border-color:var(--bar)}
+.card b{font-size:14.5px;overflow-wrap:anywhere}
+.card .s{font-size:12.5px;color:var(--muted)}
+.card .m{display:flex;justify-content:space-between;gap:6px;font-size:12.5px;align-items:center}
+.more{font-size:13px;color:var(--muted);text-align:center;padding:4px}
+
+/* panneau fiche */
+.scrim{position:fixed;inset:0;background:rgba(5,15,25,.45);z-index:40}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:41;overflow:auto;border-left:1px solid var(--line);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.sheet .bar{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line);border-top:4px solid var(--accent);padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sheet .bar h2{font-size:18px;flex:1 1 12em;min-width:0;overflow-wrap:anywhere}
+.sheet .body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.fg{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+.stbtns{display:flex;flex-wrap:wrap;gap:6px}
+.stbtns button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:700;cursor:pointer}
+.stbtns button[aria-pressed="true"]{border-color:currentColor}
+.journal{display:flex;flex-direction:column;gap:8px}
+.jn{border-left:3px solid var(--bar-soft);padding:2px 0 2px 10px;font-size:14px}
+.jn small{display:block;color:var(--muted);font-family:var(--mono);font-size:11.5px}
+.script{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14.5px;white-space:pre-wrap}
+.confirm{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.potline{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--muted)}
+.potline b{color:var(--fg);font-family:var(--mono)}
+
+/* tarifs */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.p{text-align:right;font-family:var(--mono);white-space:nowrap}
+td small{display:block;color:var(--muted);font-size:13px}
+.note{font-size:14px;color:var(--muted);margin:0}
+.warnbox{background:var(--warn-soft);color:var(--fg);border-radius:10px;padding:12px 14px;font-size:14px}
+.warnbox b{color:var(--warn)}
+.est{display:flex;flex-direction:column;gap:8px}
+.eline{display:grid;grid-template-columns:minmax(0,1fr) 5.2em auto 2.2em;gap:8px;align-items:center}
+.eline .p{font-family:var(--mono);text-align:right;white-space:nowrap}
+.etot{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.etot div{background:var(--sunk);border-radius:10px;padding:10px 12px}
+.etot span{display:block;font-size:12.5px;color:var(--muted);font-weight:700}
+.etot b{font-family:var(--mono);font-size:18px}
+
+/* outils */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--fg)}
+.tool:hover{border-color:var(--accent)}
+.tool b{font-family:var(--display);font-size:16px}
+.tool span{font-size:14px;color:var(--muted)}
+
+
+/* météo & carte */
+.wxrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.wxc{border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;cursor:pointer;text-align:left;min-width:0}
+.wxc:hover{border-color:var(--bar)}
+.wxc .wv{font-weight:700;font-size:13.5px}
+.wxc .wt{font-size:20px;font-weight:700}.wxc .wt small{font-size:13px;color:var(--muted);font-weight:500}
+.wxc .wd{font-size:12px;color:var(--muted)}
+svg.wx{width:30px;height:30px;color:var(--bar)}
+.wxcell{display:inline-flex;align-items:center;gap:6px}.wxcell svg.wx{width:22px;height:22px}
+.mapbox{overflow-x:auto}
+.tourlist{max-height:540px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:0 8px}
+svg.map{width:100%;min-width:380px;height:auto;display:block;background:var(--sunk);border-radius:10px}
+.zring{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 5}
+.zlab{font-size:11px;fill:var(--muted);font-family:var(--mono)}
+.home{stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+.d-on{fill:var(--bar);stroke:var(--surface);stroke-width:2}.d-off{fill:var(--line)}
+.d-ring{fill:none;stroke:var(--accent);stroke-width:2}
+.mlab{font-size:12px;fill:var(--fg);font-family:var(--body);font-weight:600;paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
+.mdot{cursor:pointer}.mdot:hover .d-on,.mdot:focus .d-on{fill:var(--accent)}
+.scale{stroke:var(--fg);stroke-width:2}.north{fill:var(--fg)}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:60;font-weight:700;font-size:14px;max-width:calc(100% - 32px)}
+.loading{color:var(--muted);padding:24px 0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ================= Polices embarquées (hors ligne) ================= */
+@font-face{font-family:"Archivo";font-weight:600;font-display:swap;src:url(fonts/archivo-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Archivo";font-weight:700;font-display:swap;src:url(fonts/archivo-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Archivo";font-weight:800;font-display:swap;src:url(fonts/archivo-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Source Sans 3";font-weight:400;font-display:swap;src:url(fonts/source-sans-3-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Source Sans 3";font-weight:600;font-display:swap;src:url(fonts/source-sans-3-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Source Sans 3";font-weight:700;font-display:swap;src:url(fonts/source-sans-3-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+
+/* ================= Animations ================= */
+:root{--ease-out:cubic-bezier(.16,1,.3,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);--glow:rgba(198,40,40,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--glow:rgba(255,111,97,.16)}}
+:root[data-theme="dark"]{--glow:rgba(255,111,97,.16)}
+
+/* Écran d'ouverture */
+#splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 30%,#164a73 0%,#0b2236 55%,#06121d 100%);color:#fff;overflow:hidden;transition:opacity .7s var(--ease-out),transform .9s var(--ease-out),filter .7s}
+#splash.out{opacity:0;transform:scale(1.08);filter:blur(8px);pointer-events:none}
+#splash canvas{position:absolute;inset:0;width:100%;height:100%}
+.sp-in{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.sp-logo{width:132px;height:132px;filter:drop-shadow(0 0 28px rgba(255,90,76,.45))}
+.sp-ring{fill:none;stroke:#fff;stroke-width:4.5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;animation:draw 1.1s .15s var(--ease-out) forwards}
+.sp-mount{fill:#2ec4a0;opacity:0;transform:translateY(6px);transform-box:fill-box;animation:pop .6s .85s var(--ease-spring) forwards}
+.sp-flame{fill:#e8453c;transform-origin:31px 12px;transform-box:view-box;opacity:0;animation:ignite .7s 1s var(--ease-spring) forwards,flicker 1.6s 1.7s ease-in-out infinite}
+.sp-word{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,52px);letter-spacing:-.02em;display:flex;overflow:hidden}
+.sp-word span{display:inline-block;transform:translateY(110%);animation:rise .7s var(--ease-out) forwards;animation-delay:calc(1.05s + var(--i)*45ms)}
+.sp-word span.r{color:#ff6f61}
+.sp-sub{font-family:var(--mono);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#a9c0d4;opacity:0;animation:fade .8s 1.6s forwards}
+.sp-bar{width:180px;height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}
+.sp-bar i{display:block;height:100%;width:40%;border-radius:3px;background:linear-gradient(90deg,transparent,#ff6f61,#2ec4a0,transparent);animation:slide 1.2s ease-in-out infinite}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{to{opacity:1;transform:none}}
+@keyframes ignite{0%{opacity:0;transform:scale(.2) translateY(8px)}100%{opacity:1;transform:none}}
+@keyframes flicker{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.06,.96) rotate(-3deg)}60%{transform:scale(.97,1.05) rotate(2deg)}}
+@keyframes rise{to{transform:none}}
+@keyframes fade{to{opacity:1}}
+@keyframes slide{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+
+/* Fond vivant du rail de navigation */
+nav.rail{background:linear-gradient(160deg,#0d3352,#0a2a44 60%,#081f33);overflow:hidden}
+nav.rail::before{content:"";position:absolute;inset:-40%;background:radial-gradient(35% 30% at 20% 20%,rgba(46,196,160,.16),transparent 70%),radial-gradient(30% 28% at 80% 70%,rgba(232,69,60,.18),transparent 70%);animation:aurora 18s ease-in-out infinite alternate;pointer-events:none}
+nav.rail > *{position:relative}
+@keyframes aurora{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(6%,-4%) rotate(8deg)}100%{transform:translate(-5%,6%) rotate(-6deg)}}
+nav.rail a{transition:color .25s,background .35s var(--ease-out),transform .25s var(--ease-out)}
+nav.rail a:hover{transform:translateX(3px)}
+nav.rail a[aria-current="page"]{background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,255,255,.05));box-shadow:inset 3px 0 0 #ff6f61}
+nav.rail a[aria-current="page"] svg{animation:popicon .5s var(--ease-spring)}
+@keyframes popicon{0%{transform:scale(.6)}100%{transform:none}}
+.brand svg .fl{transform-origin:31px 12px;animation:flicker 2.4s ease-in-out infinite}
+@media (max-width:860px){nav.rail a:hover{transform:none}nav.rail a[aria-current="page"]{box-shadow:inset 0 3px 0 #ff6f61}}
+
+/* Entrée des vues : cascade */
+.view.enter > *{opacity:0;transform:translateY(14px);animation:enter .65s var(--ease-out) forwards}
+.view.enter > *:nth-child(1){animation-delay:.02s}.view.enter > *:nth-child(2){animation-delay:.08s}.view.enter > *:nth-child(3){animation-delay:.14s}
+.view.enter > *:nth-child(4){animation-delay:.2s}.view.enter > *:nth-child(5){animation-delay:.26s}.view.enter > *:nth-child(6){animation-delay:.32s}
+.view.enter > *:nth-child(n+7){animation-delay:.38s}
+.view.enter .kpi,.view.enter .wxc,.view.enter .card,.view.enter .tool{opacity:0;animation:enter .6s var(--ease-out) forwards;animation-delay:calc(.15s + var(--i,0)*55ms)}
+@keyframes enter{to{opacity:1;transform:none}}
+::view-transition-old(root){animation:vt-out .28s ease-in both}
+::view-transition-new(root){animation:vt-in .45s var(--ease-out) both}
+@keyframes vt-out{to{opacity:0;transform:translateY(-8px);filter:blur(4px)}}
+@keyframes vt-in{from{opacity:0;transform:translateY(10px);filter:blur(6px)}}
+
+/* Cartes : relief, halo qui suit la souris */
+.kpi,.panel,.card,.tool,.wxc{position:relative;transition:transform .35s var(--ease-out),box-shadow .35s var(--ease-out),border-color .25s}
+.kpi::after,.tool::after,.card::after,.wxc::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),var(--glow),transparent 65%)}
+.kpi:hover::after,.tool:hover::after,.card:hover::after,.wxc:hover::after{opacity:1}
+button.kpi:hover,.tool:hover,.card:hover,.wxc:hover{transform:translateY(-3px);box-shadow:0 12px 28px -14px rgba(13,51,82,.45)}
+.panel:hover{box-shadow:0 10px 30px -22px rgba(13,51,82,.5)}
+.kpi .v{background:linear-gradient(90deg,currentColor,currentColor);-webkit-background-clip:text}
+.kpi.alert{animation:pulseAlert 2.4s ease-in-out infinite}
+@keyframes pulseAlert{0%,100%{box-shadow:0 0 0 0 rgba(179,38,30,0)}50%{box-shadow:0 0 0 6px rgba(179,38,30,.12)}}
+.meter i{transition:width 1.2s var(--ease-out)}
+.view.enter .meter i{animation:grow 1.3s .4s var(--ease-out) both}
+.hb .track i{transform-origin:left;transition:width .6s var(--ease-out)}
+.view.enter .hb .track i{animation:growx 1s var(--ease-out) both;animation-delay:calc(.35s + var(--i,0)*60ms)}
+@keyframes grow{from{width:0}}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Bandeau saison : flamme et reflet */
+.season{position:relative;overflow:hidden;background:linear-gradient(120deg,#0d3352,#164a73 60%,#0d3352)}
+.season::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.09) 50%,transparent 65%);transform:translateX(-100%);animation:sheen 6s 1s ease-in-out infinite}
+.season svg{animation:flicker 1.8s ease-in-out infinite;transform-origin:50% 80%}
+@keyframes sheen{0%,60%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* Icônes météo animées */
+svg.wx .drop{animation:drop 1.1s linear infinite}
+svg.wx .drop:nth-of-type(2){animation-delay:.35s}svg.wx .drop:nth-of-type(3){animation-delay:.7s}
+svg.wx .sun{transform-origin:12px 12px;animation:spin 12s linear infinite}
+svg.wx .cl{animation:drift 4s ease-in-out infinite alternate}
+svg.wx .bolt{animation:bolt 2.2s steps(1) infinite}
+@keyframes drop{0%{transform:translateY(-3px);opacity:0}30%{opacity:1}100%{transform:translateY(4px);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes drift{from{transform:translateX(-1px)}to{transform:translateX(1.5px)}}
+@keyframes bolt{0%,88%{opacity:1}90%,94%{opacity:.1}96%{opacity:1}}
+.wx-busy .wxrefresh svg{animation:spin 1s linear infinite}
+
+/* Carte : points qui apparaissent et anneaux qui respirent */
+.view.enter .mdot{opacity:0;animation:fade .5s var(--ease-out) forwards;animation-delay:calc(.3s + var(--i,0)*45ms)}
+.d-ring{transform-box:fill-box;transform-origin:center;animation:breathe 2.4s ease-in-out infinite}
+.zring{animation:dash 30s linear infinite}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.35}}
+@keyframes dash{to{stroke-dashoffset:-200}}
+
+/* Fiche : panneau à ressort, fond flouté */
+.scrim{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fade .3s forwards;opacity:0}
+.sheet{animation:sheetIn .55s var(--ease-out)}
+@keyframes sheetIn{from{transform:translateX(40px);opacity:0}}
+@media (max-width:860px){@keyframes sheetIn{from{transform:translateY(60px);opacity:0}}}
+.stbtns button{transition:transform .25s var(--ease-spring),background .2s}
+.stbtns button[aria-pressed="true"]{transform:scale(1.06)}
+.toast{animation:toastIn .5s var(--ease-spring)}
+@keyframes toastIn{from{transform:translate(-50%,20px) scale(.9);opacity:0}}
+
+/* Boutons : onde au clic */
+.btn,.chip,.kpi,.wxc{overflow:hidden}
+.ripple{position:absolute;border-radius:50%;transform:scale(0);background:currentColor;opacity:.22;pointer-events:none;animation:ripple .6s ease-out forwards}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+.btn{position:relative;transition:transform .2s var(--ease-spring),box-shadow .25s,border-color .2s}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:linear-gradient(135deg,#d93a2b,#a8281d);box-shadow:0 6px 16px -8px rgba(198,40,40,.7)}
+.btn.primary:hover{box-shadow:0 10px 22px -8px rgba(198,40,40,.8)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .view.enter > *,.view.enter .kpi,.view.enter .wxc,.view.enter .card,.view.enter .tool,.view.enter .mdot{opacity:1!important;transform:none!important}
+  .sp-ring{stroke-dashoffset:0}.sp-mount,.sp-flame,.sp-sub{opacity:1}.sp-word span{transform:none}
+}
+</style>
+
+</head>
+<body>
+<div id="splash" role="presentation"><canvas aria-hidden="true"></canvas><div class="sp-in">
+  <svg class="sp-logo" viewBox="0 0 40 40" aria-hidden="true"><circle class="sp-ring" cx="20" cy="21" r="15" pathLength="100" transform="rotate(-90 20 21)"/><path class="sp-mount" d="M11 27l6-8 4 5 3-3 6 6z"/><path class="sp-flame" d="M31 3c1 2.5 3.5 3.5 3.5 6.5a3.5 3.5 0 0 1-7 0c0-1.6.8-2.3 1.4-3 .2 1 .7 1.3 1.1 1.4C30 6.3 30.6 4.6 31 3z"/></svg>
+  <div class="sp-word" aria-label="OmniPilote"><span style="--i:0">O</span><span style="--i:1">m</span><span style="--i:2">n</span><span style="--i:3">i</span><span style="--i:4" class="r">P</span><span style="--i:5" class="r">i</span><span style="--i:6" class="r">l</span><span style="--i:7" class="r">o</span><span style="--i:8" class="r">t</span><span style="--i:9" class="r">e</span></div>
+  <div class="sp-sub">OmniService · Sud Corse</div><div class="sp-bar"><i></i></div></div></div>
+<nav class="rail" id="nav" aria-label="Sections">
+  <div class="brand">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="21" r="15" fill="none" stroke="currentColor" stroke-width="4.5"/><path d="M11 27l6-8 4 5 3-3 6 6z" fill="#2ec4a0"/><path class="fl" d="M31 3c1 2.5 3.5 3.5 3.5 6.5a3.5 3.5 0 0 1-7 0c0-1.6.8-2.3 1.4-3 .2 1 .7 1.3 1.1 1.4C30 6.3 30.6 4.6 31 3z" fill="#e8453c"/></svg>
+    <div><b>OmniPilote</b><small>Sud Corse</small></div>
+  </div>
+  <a href="#accueil" data-v="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg><span class="lbl-long">Tableau de bord</span><span class="lbl-short">Accueil</span></a>
+  <a href="#pipeline" data-v="pipeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v6h-4z"/></svg><span class="lbl-long">Prospection</span><span class="lbl-short">Ventes</span></a>
+  <a href="#annuaire" data-v="annuaire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21V7l6-4 6 4v14M15 21V11h6v10M3 21h18M7 10h4M7 14h4M7 18h4"/></svg><span class="lbl-long">Entreprises</span><span class="lbl-short">Entreprises</span></a>
+  <a href="#terrain" data-v="terrain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg><span class="lbl-long">Terrain : météo, carte, tournée</span><span class="lbl-short">Terrain</span></a>
+  <a href="#tarifs" data-v="tarifs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span class="lbl-long">Tarifs &amp; devis express</span><span class="lbl-short">Tarifs</span></a>
+  <a href="#arguments" data-v="arguments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="lbl-long">Arguments &amp; scripts</span><span class="lbl-short">Scripts</span></a>
+  <a href="#outils" data-v="outils"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span class="lbl-long">Mes outils &amp; réglages</span><span class="lbl-short">Outils</span></a>
+  <div class="foot"><span class="sync" id="sync"><i></i><span>Connexion…</span></span></div>
+</nav>
+
+<main id="main">
+  <div class="mobile-sync"><span class="sync" id="sync2"><i></i><span>Connexion…</span></span></div>
+  <div class="view" id="view"><p class="loading">Ouverture du tableau de bord : tes entreprises, prospects et tarifs s'affichent dès que la base répond.</p></div>
+</main>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden aria-label="Fiche entreprise"></aside>
+<div class="toast" id="toast" hidden></div>
+
+<script src="seed.js"></script>
+<script src="vendor/capacitor.js"></script>
+<script src="vendor/filesystem.js"></script>
+<script src="vendor/share.js"></script>
+<script>
+(function(){
+"use strict";
+/* ============ Référentiels ============ */
+const STATUTS=[["a_contacter","À contacter"],["contacte","Contacté"],["rdv","RDV / visite"],["devis","Devis envoyé"],["gagne","Signé"],["perdu","Perdu / pas intéressé"]];
+const STL=Object.fromEntries(STATUTS);
+const SECTEURS=["Hôtel","Camping / résidence","Restaurant","Commerce / supermarché","Garage / atelier","Nautisme","Location de véhicules","BTP / artisan","Syndic / copropriété","Collectivité / public","Particulier","Autre"];
+const DEF_PROFILS={"Hôtel":{ext:10,plans:4},"Camping / résidence":{ext:20,plans:4},"Restaurant":{ext:3,plans:1},"Commerce / supermarché":{ext:12,plans:2},"Garage / atelier":{ext:5,plans:1},"Nautisme":{ext:10,plans:0},"Location de véhicules":{ext:4,plans:1},"BTP / artisan":{ext:6,plans:0},"Syndic / copropriété":{ext:8,plans:2},"Collectivité / public":{ext:20,plans:6},"Particulier":{ext:1,plans:0},"Autre":{ext:3,plans:1}};
+const ZONE1=["Sotta","Figari","Porto-Vecchio","Bonifacio","Lecci","Pianottoli-Caldarello","Monacia-d'Aullène","Carbini","San-Gavino-di-Carbini"];
+const ZONE2=["Zonza","Sartène","Propriano","Levie","Sainte-Lucie-de-Porto-Vecchio","Conca"];
+/* positions approximatives des communes (centre), pour la carte du secteur */
+const GEO={"Sotta":[41.540,9.179],"Porto-Vecchio":[41.591,9.279],"Bonifacio":[41.387,9.159],"Figari":[41.488,9.130],"Lecci":[41.679,9.317],
+ "Zonza":[41.698,9.355],"Sari-Solenzara":[41.855,9.398],"Solaro":[41.898,9.326],"Conca":[41.734,9.344],"Sartène":[41.621,8.975],"Propriano":[41.676,8.903],
+ "Olmeto":[41.716,8.917],"Pianottoli-Caldarello":[41.472,9.050],"Monacia-d'Aullène":[41.515,9.017],"Carbini":[41.689,9.152],"San-Gavino-di-Carbini":[41.707,9.183],"Levie":[41.703,9.122]};
+const kmFrom=(c)=>{const a=GEO.Sotta,b=GEO[c];if(!b)return null;const dy=(b[0]-a[0])*111,dx=(b[1]-a[1])*111*Math.cos(41.6*Math.PI/180);return Math.round(Math.hypot(dx,dy))};
+const CIEL={soleil:["Soleil","M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4","circle"],
+ eclaircies:["Éclaircies","M8 3v1M3 8h1M4.5 4.5l.7.7M13 6.5A4 4 0 0 0 5.5 9","cloud"],couvert:["Couvert","","cloud"],pluie:["Pluie","M8 19l-1 2M12 19l-1 2M16 19l-1 2","cloud"],
+ orage:["Orage","M12 15l-2 4h3l-2 4","cloud"],neige:["Neige","M8 20h.01M12 21h.01M16 20h.01","cloud"],brouillard:["Brouillard","M4 18h16M6 21h12","cloud"]};
+function icoCiel(k){const c=CIEL[k]||CIEL.couvert;const cl='<g class="cl"><path d="M7 17h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.4A3.3 3.3 0 0 0 7 17z"/></g>';let x="";
+ if(k==="soleil")x='<g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></g>';
+ else if(k==="eclaircies")x='<g class="sun"><path d="M8 2v1.5M2.5 7.5H4M4 3.5l1 1M12.5 5.5A4 4 0 0 0 5 8.5"/></g>'+cl;
+ else if(k==="pluie")x=cl+'<path class="drop" d="M8 19l-.6 1.6"/><path class="drop" d="M12 19l-.6 1.6"/><path class="drop" d="M16 19l-.6 1.6"/>';
+ else if(k==="orage")x=cl+'<path class="bolt" d="M12.5 15l-2 4h3l-2 4"/>';
+ else if(k==="neige")x=cl+'<path class="drop" d="M8 20h.01"/><path class="drop" d="M12 21h.01"/><path class="drop" d="M16 20h.01"/>';
+ else if(k==="brouillard")x=cl+'<path class="cl" d="M4 19h16M6 22h12"/>';
+ else x=cl;
+ return `<svg class="wx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" role="img" aria-label="${c[0]}">${x}</svg>`}
+const zoneOf=c=>ZONE1.includes(c)?1:ZONE2.includes(c)?2:3;
+const PRIX_VERIF=13, PRIX_PLAN=103, PRIX_VERIF_PLAN=25; /* référence : outil Chiffrage OmniService (vérif. pression permanente, plan A3 PVC posé) */
+
+/* Grille de référence = Chiffrage OmniService (15/10/2026). Lignes marquées « fiche Tarifs » : absentes du Chiffrage, reprises de la fiche Tarifs. */
+const TARIFS=[
+ {g:"Vérification annuelle (par appareil)",cat:"svc",items:[
+  ["Vérification pression permanente",13,"manomètre, pesée, état, étiquette"],
+  ["Vérification pression auxiliaire",16,"ouverture, cartouche, joint, replombage"],
+  ["Remplacement cartouche",28,"sparklet + main d'œuvre"],
+  ["CO₂ 2 kg",18,"fiche Tarifs"],["CO₂ 5 kg",22,"fiche Tarifs"],["Extincteur sur roues 25 à 50 kg",35,"fiche Tarifs"]]},
+ {g:"Déplacement",cat:"svc",items:[
+  ["Forfait déplacement (moins de 5 appareils)",45,"offert au-delà de 5 appareils"],
+  ["Zone 2 : 20 à 50 km",60,"fiche Tarifs : Sartène, Propriano, Sainte-Lucie, Conca…"]]},
+ {g:"Forfaits particuliers et petits commerces (fiche Tarifs)",cat:"svc",items:[
+  ["Particulier : vérification d'1 extincteur à domicile",45,"12 € par extincteur supplémentaire"],
+  ["Extincteur supplémentaire (particulier)",12,""],
+  ["Petit commerce : jusqu'à 5 extincteurs",79,""],
+  ["Commerce / entreprise : 6 à 15 extincteurs (par appareil)",11,""]]},
+ {g:"Entretien et recharge (fiche Tarifs)",cat:"svc",items:[
+  ["Maintenance additionnelle (5 ans), eau ou poudre",55,""],["Recharge après utilisation, eau 6 L",55,""]]},
+ {g:"Matériel vendu et posé",cat:"vente",items:[
+  ["Poudre ABC 2 kg",65,""],["Poudre ABC 6 kg",115,""],["Poudre ABC 9 kg",129,""],
+  ["Eau + additif 6 L",119,""],["Eau + additif 9 L",139,""],["CO₂ 2 kg",129,""],["CO₂ 5 kg",230,""],
+  ["Eau antigel 6 L",149,""],["Lithium 6 L",290,""],["Couverture anti-feu",35,""],["Support mural",12,""],
+  ["Housse nylon",19,""],["Coffret PVC",79,""],["Bloc BAES",69,""],["Alarme type 4",99,""]]},
+ {g:"Pièces annexes (fiche Tarifs)",cat:"vente",items:[
+  ["Goupille et scellé",8,""],["Changement de joint de tête",12,"pose incluse"],["Panneau de signalisation extincteur",9,""],["Reprise et recyclage d'un extincteur réformé",15,""]]},
+ {g:"Plans d'évacuation (forfait relevé, dessin, support, port et pose)",cat:"plan",items:[
+  ["Évacuation A4 PVC rigide (chambre)",67,""],["Évacuation A3 PVC rigide (étage)",103,"le plus courant"],["Évacuation A2 PVC rigide",239,""],
+  ["Évacuation A3 photoluminescent",146,""],["Évacuation A3 Dibond / alu",131,""],["Évacuation A3 PVC sous cadre alu",110,""],
+  ["Évacuation A3 plexiglas",154,""],["Évacuation A3 vinyle",87,"coût du support estimé"],["Plan A3 en PDF seul (le client imprime)",65,""],
+  ["Plan A3 PVC identique en lot (pose seule)",51,"plan déjà dessiné"]]},
+ {g:"Plans d'intervention (+ 20 € par plan)",cat:"plan",items:[
+  ["Intervention A3 Dibond / alu",151,"inaltérable, le choix habituel"],["Intervention A2 Dibond / alu",320,""],
+  ["Intervention A3 photoluminescent",166,""],["Intervention A3 plexiglas",174,""]]},
+ {g:"Suivi des plans (fiche Tarifs)",cat:"plan",items:[
+  ["Vérification annuelle d'un plan",25,""],["Vérification groupée (≥ 5 plans ou avec la tournée)",18,""],["Mise à jour d'un plan existant (dès)",93,""]]},
+ {g:"Découpe de viande à façon (fiche Tarifs)",cat:"svc",items:[
+  ["Professionnels : à l'heure",35,""],["Professionnels : journée (7 h)",230,""],["Agneau ou cabri entier",35,""],
+  ["Porc ou sanglier (au kg)",1.5,""],["Quartier de bœuf ou veau (au kg)",1.2,""]]}
+];
+/* taux de prélèvement de l'outil Chiffrage — à revérifier sur autoentrepreneur.urssaf.fr */
+const PREL={vente:0.134,svc:0.2368,plan:0.279};
+const CATL={vente:"Vente de marchandises",svc:"Prestation de services",plan:"Prestation de services"};
+
+const OUTILS=[
+ ["OmniClients","Fiches clients, équipements, interventions signées","https://claude.ai/artifact/T578cKfqydKagW9CnqnDQK"],
+ ["Agenda Extincteurs","Échéances de vérification et rendez-vous","https://claude.ai/artifact/XtkzEFwJyk66gzgoQAbL1n"],
+ ["Agenda Multi-services","Bricolage, tombes, musique","https://claude.ai/artifact/PRwLnVVEH6KEfNKjE551sZ"],
+ ["Carnet de facturation","Devis et factures PDF, envoi Gmail","https://claude.ai/artifact/CPBXzGWk2ZKUVbG67SQkS9"],
+ ["Chiffrage OmniService","Calcul de devis plans et matériel, avec marges","https://claude.ai/artifact/QKP6jJuziweCSh2n9zKpui"],
+ ["Tarifs OmniService","Grille extincteurs à montrer au client","https://claude.ai/artifact/We1nzbZu78LpiTUDYCLixW"],
+ ["Tarifs plans de sécurité","Grille plans d'évacuation et d'intervention","https://claude.ai/artifact/JfUrAHh2hadUkRcHDg1abY"],
+ ["OmniPlans","Dessin des plans d'évacuation","https://claude.ai/artifact/EGFW6MPJCQRkD8k6sxBD7Q"],
+ ["Références Eurofeu","Catalogue fournisseur","https://claude.ai/artifact/CFHCmYKUgpdqwnpBvR8teU"],
+ ["Checklist lancement","Démarches multi-service et extincteurs","https://claude.ai/artifact/RzhVyMBRBmZbEVfHyKPZ6Y"]
+];
+
+const SCRIPTS={
+ "Hôtel":"Bonjour, Frédéric Bichet, OmniService Sud Corse, je suis basé à Sotta. Je m'occupe de la vérification des extincteurs et des plans d'évacuation pour les hôtels de l'Extrême-Sud.\n\nAvant l'ouverture de la saison, la vérification annuelle des extincteurs (article MS 38) et des plans à jour dans chaque couloir et chaque chambre sont ce que regardent la commission de sécurité et votre assureur.\n\nJe peux passer faire un état des lieux gratuit : je compte les appareils, je regarde les dates, et je vous laisse un devis. Quel jour vous arrangerait ?",
+ "Camping / résidence":"Bonjour, Frédéric Bichet, OmniService Sud Corse, à Sotta. Je vérifie et pose des extincteurs et des plans d'évacuation pour les campings du secteur.\n\nSur un camping, il faut des appareils près des sanitaires, de l'accueil, du snack, de la piscine technique et des locaux électriques, tous vérifiés une fois par an. Je peux faire la tournée complète avant l'ouverture, avec le rapport pour le registre de sécurité.\n\nJe vous propose un passage gratuit pour faire le compte et vous laisser un devis. Ça vous irait en février ou en mars ?",
+ "Restaurant":"Bonjour, Frédéric Bichet, OmniService Sud Corse. Je vérifie les extincteurs des restaurants de Porto-Vecchio à Bonifacio.\n\nEn cuisine, on recommande un CO₂ près des fourneaux et du tableau électrique, et une couverture anti-feu pour les feux d'huile. La vérification annuelle est obligatoire et j'ai un forfait petit commerce à 79 € jusqu'à 5 appareils, déplacement compris en zone 1.\n\nJe peux passer à un moment calme, avant le service ?",
+ "Commerce / supermarché":"Bonjour, Frédéric Bichet, OmniService Sud Corse, à Sotta. Je m'occupe des extincteurs et des plans d'évacuation des commerces du Sud Corse.\n\nLa règle en ERP, c'est au moins un extincteur pour 200 m² et par niveau, avec un minimum de deux (article MS 39), et une vérification par an. Je fais le compte avec vous, je vérifie, je pose ce qui manque, et vous avez le rapport pour le registre.\n\nQui s'occupe de la sécurité dans le magasin ? Je peux passer le voir cette semaine.",
+ "Garage / atelier":"Bonjour, Frédéric Bichet, OmniService Sud Corse. Je vérifie les extincteurs des garages et ateliers du secteur.\n\nAvec les hydrocarbures et le poste de soudure, il faut des poudres ABC bien placées et un CO₂ près du tableau électrique, vérifiés une fois par an. Côté code du travail, ce sont les exercices tous les six mois qui sont souvent oubliés.\n\nJe peux passer faire le point gratuitement. Vous êtes plutôt disponible en début ou en fin de journée ?",
+ "Nautisme":"Bonjour, Frédéric Bichet, OmniService Sud Corse. Je fournis et vérifie les extincteurs de bateaux, à Porto-Vecchio et Bonifacio.\n\nHors saison, c'est le bon moment pour contrôler toute la flotte d'un coup : je viens sur le port, je vérifie chaque appareil, je remplace ceux qui sont périmés (extincteur 1 ou 2 kg avec support à 65 €).\n\nCombien de bateaux avez-vous ? Je vous fais un prix pour la flotte.",
+ "Location de véhicules":"Bonjour, Frédéric Bichet, OmniService Sud Corse, à Sotta, à 10 minutes de l'aéroport. Je m'occupe des extincteurs de l'agence et de l'atelier, et je peux équiper les utilitaires.\n\nJe peux passer à l'agence pour faire le point et vous laisser un devis. Qui est le bon interlocuteur chez vous ?",
+ "BTP / artisan":"Bonjour, Frédéric Bichet, OmniService Sud Corse. J'équipe les véhicules et les chantiers des entreprises du bâtiment en extincteurs, et je fais la vérification annuelle du dépôt.\n\nUn extincteur 2 kg par camion avec son support, c'est 65 € posé. Je peux passer au dépôt un matin tôt avant le départ des équipes. Ça vous dit ?",
+ "Syndic / copropriété":"Bonjour, Frédéric Bichet, OmniService Sud Corse, à Sotta. Je vérifie les extincteurs et les plans des parties communes des résidences du secteur.\n\nParkings, locaux poubelles, chaufferies, locaux techniques : je peux reprendre l'ensemble de vos copropriétés sur une seule tournée annuelle, avec un rapport par résidence pour vos assemblées générales.\n\nJe peux vous envoyer une proposition pour une ou deux résidences test ?",
+ "Collectivité / public":"Bonjour, Frédéric Bichet, OmniService Sud Corse, installé à Sotta. Je propose la vérification des extincteurs et la mise à jour des plans d'évacuation pour les bâtiments communaux : mairie, école, salle des fêtes, ateliers.\n\nJe suis un prestataire local, donc réactif et sans frais de déplacement sur la zone. Pouvez-vous me dire comment se passent vos consultations pour ce type de prestation, et à qui adresser un devis ?",
+ "Particulier":"Bonjour, Frédéric Bichet, OmniService Sud Corse. Je vérifie les extincteurs à domicile : 45 € pour un appareil, déplacement compris, 12 € par appareil en plus. Quand puis-je passer ?",
+ "Autre":"Bonjour, Frédéric Bichet, OmniService Sud Corse, à Sotta. Je vérifie, vends et pose des extincteurs et des plans d'évacuation dans l'Extrême-Sud. Je peux passer faire un état des lieux gratuit et vous laisser un devis. Quel moment vous arrangerait ?"
+};
+const MAIL=n=>`Objet : Vérification de vos extincteurs et plans d'évacuation – OmniService Sud Corse
+
+Bonjour,
+
+Je suis Frédéric Bichet, d'OmniService Sud Corse, installé à Sotta. Je vérifie, vends et pose des extincteurs et des plans d'évacuation pour les professionnels de l'Extrême-Sud.
+
+Pour ${n}, je vous propose un état des lieux gratuit : je compte vos appareils, je contrôle les dates et l'implantation, et je vous remets un devis clair, sans engagement.
+
+Quelques repères :
+- vérification annuelle dès 13 € par appareil ;
+- forfait petit commerce 79 € jusqu'à 5 extincteurs, déplacement compris en zone 1 ;
+- plans d'évacuation A3 posés dès 103 € ;
+- contrat 3 ans : −10 % sur les vérifications.
+
+Je reste à votre disposition par mail.
+
+Bien cordialement,
+Frédéric Bichet
+OmniService Sud Corse
+omniservicesudcorse@gmail.com
+TVA non applicable, art. 293 B du CGI`;
+
+/* ============ Utilitaires ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:(Math.round(n)===n?0:2)}).format(+n||0);
+const eur0=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Math.round(+n||0));
+const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const addDays=(n)=>{const d=new Date();d.setDate(d.getDate()+n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const frD=s=>s?new Date(s+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"}):"";
+const dDays=s=>Math.round((new Date(s+"T12:00:00")-new Date(todayISO()+"T12:00:00"))/864e5);
+function toast(t){const e=$("#toast");e.textContent=t;e.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>e.hidden=true,2600)}
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+async function copy(txt,btn){try{await navigator.clipboard.writeText(txt);toast("Copié")}catch(e){toast("Copie impossible ici : sélectionne le texte à la main")}}
+
+/* ============ État ============ */
+const S={ents:[],reg:{objectif:15000,profils:DEF_PROFILS},db:null,loaded:false,offline:false,meteo:null};
+let wxVille=lsGet("op-wx","Sotta"), tourCom=lsGet("op-tc",["Porto-Vecchio"]), tourSel=[];
+let V="accueil", openId=null, draft=null;
+const F=Object.assign({q:"",sec:"",com:"",st:"",zone:"",prio:"",tri:"pot"},lsGet("op-f",{}));
+let pipeSec=lsGet("op-ps","");
+let EST=lsGet("op-est2",[]);
+
+function profil(e){const p=(S.reg.profils&&S.reg.profils[e.secteur])||DEF_PROFILS[e.secteur]||DEF_PROFILS.Autre;
+  return {ext:(e.ext!=null&&e.ext!=="")?+e.ext:p.ext, plans:(e.plans!=null&&e.plans!=="")?+e.plans:p.plans}}
+function pot(e){const p=profil(e);return {an1:p.ext*PRIX_VERIF+p.plans*PRIX_PLAN, rec:p.ext*PRIX_VERIF+p.plans*PRIX_VERIF_PLAN, ext:p.ext, plans:p.plans}}
+const actif=e=>["contacte","rdv","devis"].includes(e.statut);
+const relDue=e=>e.relance&&e.statut!=="gagne"&&e.statut!=="perdu"&&dDays(e.relance)<=0;
+
+/* ============ Rendu ============ */
+function setNav(){
+  document.querySelectorAll("#nav a").forEach(a=>{if(a.dataset.v===V)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")})}
+function render(anim){
+  setNav();
+  const v=$("#view");
+  if(S.offline){v.innerHTML=`<div class="panel"><div class="empty"><b>Base indisponible ici</b>Ouvre OmniPilote depuis ton compte Claude (ordinateur ou application) pour retrouver tes prospects. Les tarifs et les scripts restent consultables.</div></div>`+(V==="tarifs"?viewTarifs():V==="arguments"?viewArgs():V==="outils"?viewOutils():"");bindAfter();return}
+  if(!S.loaded&&["accueil","pipeline","annuaire","terrain"].includes(V)){v.innerHTML=`<p class="loading">Chargement de tes entreprises et prospects…</p>`;return}
+  v.innerHTML=({accueil:viewAccueil,pipeline:viewPipeline,annuaire:viewAnnuaire,terrain:viewTerrain,tarifs:viewTarifs,arguments:viewArgs,outils:viewOutils}[V]||viewAccueil)();
+  bindAfter();afterRender(anim);
+}
+
+function season(){
+  const m=new Date().getMonth()+1;
+  if(m>=11||m===1) return ["Hors saison : prépare l'avant-saison","Les hôtels, campings et loueurs de bateaux sont fermés et leurs gérants préparent l'ouverture. <strong>Appelle-les maintenant</strong> pour caler les vérifications de février–avril, avant la commission de sécurité et les assurances. Les mairies et syndics sont joignables toute l'année."];
+  if(m<=4) return ["Avant-saison : c'est le moment de signer","Tous les établissements saisonniers doivent être vérifiés avant d'ouvrir. <strong>Priorité aux hôtels et campings</strong>, puis restaurants des ports. Groupe les clients voisins pour offrir le déplacement."];
+  if(m<=5) return ["Ouverture des saisonniers : derniers contrôles","Les derniers campings et restaurants de plage ouvrent : propose une intervention express avant l'arrivée des clients. <strong>Débroussaillement obligatoire avant l'été</strong> : une piste pour ton activité multi-service."];
+  if(m<=9) return ["Pleine saison : tournées et risque incendie","Consulte chaque matin le risque feux de forêt de la préfecture avant de travailler dans le maquis. Les gérants ont peu de temps : vise les commerces ouverts à l'année, garages et BTP. <strong>Note les saisonniers à relancer en novembre.</strong>"];
+  return ["Fin de saison : propose le contrat 3 ans","Les saisonniers ferment : propose le <strong>contrat d'entretien à −10 %</strong> pour l'année prochaine, pendant qu'ils font le bilan."];
+}
+
+function viewAccueil(){
+  const E=S.ents, y=String(new Date().getFullYear());
+  const aC=E.filter(e=>e.statut==="a_contacter").length;
+  const act=E.filter(actif);
+  const due=E.filter(relDue).sort((a,b)=>a.relance.localeCompare(b.relance));
+  const late=due.filter(e=>dDays(e.relance)<0).length;
+  const devis=E.filter(e=>e.statut==="devis");
+  const devisSum=devis.reduce((s,e)=>s+(+e.devis||0),0);
+  const won=E.filter(e=>e.statut==="gagne"&&(!e.signeLe||e.signeLe.startsWith(y)));
+  const wonSum=won.reduce((s,e)=>s+(+e.signe||+e.devis||0),0);
+  const obj=+S.reg.objectif||0, pct=obj?Math.min(100,Math.round(wonSum/obj*100)):0;
+  const potRec=E.filter(e=>e.statut!=="perdu").reduce((s,e)=>s+pot(e).rec,0);
+  const contactes=E.filter(e=>e.statut!=="a_contacter").length;
+  const conv=contactes?Math.round(E.filter(e=>e.statut==="gagne").length/contactes*100):0;
+  const [st,sp]=season();
+  const lim=Date.now()-7*864e5; const act7=E.reduce((s,e)=>s+(e.journal||[]).filter(j=>Date.parse(j.d)>=lim).length,0);
+  const top=E.filter(e=>e.statut==="a_contacter").sort((a,b)=>(a.prio||2)-(b.prio||2)||pot(b).an1-pot(a).an1).slice(0,8);
+  /* entonnoir */
+  const fun=STATUTS.map(([k,l])=>[k,l,E.filter(e=>e.statut===k).length]);
+  const fmax=Math.max(1,...fun.map(f=>f[2]));
+  /* potentiel par secteur */
+  const bySec={};E.filter(e=>e.statut!=="perdu").forEach(e=>{bySec[e.secteur]=(bySec[e.secteur]||0)+pot(e).an1});
+  const secs=Object.entries(bySec).sort((a,b)=>b[1]-a[1]);const smax=Math.max(1,...secs.map(s=>s[1]));
+  const byCom={};E.filter(e=>e.statut!=="perdu").forEach(e=>{byCom[e.commune]=(byCom[e.commune]||0)+1});
+  const coms=Object.entries(byCom).sort((a,b)=>b[1]-a[1]).slice(0,12);const cmax=Math.max(1,...coms.map(c=>c[1]));
+  return `<div class="vhead"><div><h1>Tableau de bord</h1><p>OmniService Sud Corse · ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p></div>
+    <div class="btns"><button class="btn primary" data-new>+ Entreprise</button><a class="btn" href="#annuaire">Voir l'annuaire</a></div></div>
+  <div class="season"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2c1.5 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3.2 2-4 .3 1.6 1 2.3 1.8 2.6C10.8 7 11.4 4.4 12 2z"/></svg><div><b>${st}</b><p>${sp}</p></div></div>
+  ${homeWx()}
+  <div class="kpis">
+    <button class="kpi ${late?"alert":""}" data-go="annuaire" data-fst="relance"><span class="k">Relances à faire</span><span class="v">${due.length}</span><span class="d">${late?late+" en retard":"aujourd'hui et en retard"}</span></button>
+    <button class="kpi" data-go="annuaire" data-fst="a_contacter"><span class="k">Entreprises à contacter</span><span class="v">${aC}</span><span class="d">sur ${E.length} dans l'annuaire</span></button>
+    <button class="kpi" data-go="pipeline"><span class="k">Prospects en cours</span><span class="v">${act.length}</span><span class="d">contactés, en RDV ou en devis</span></button>
+    <button class="kpi" data-go="pipeline"><span class="k">Devis en attente</span><span class="v">${eur0(devisSum)}</span><span class="d">${devis.length} devis envoyé${devis.length>1?"s":""}</span></button>
+    <div class="kpi" style="cursor:default"><span class="k">Signé en ${y}</span><span class="v">${eur0(wonSum)}</span><div class="meter" role="img" aria-label="${pct} % de l'objectif"><i style="width:${pct}%"></i></div><span class="d">${pct} % de l'objectif de ${eur0(obj)}</span></div>
+    <div class="kpi" style="cursor:default"><span class="k">Actions cette semaine</span><span class="v">${act7}</span><span class="d">notes et changements d'étape sur 7 jours</span></div>
+    <div class="kpi" style="cursor:default"><span class="k">Potentiel récurrent</span><span class="v">${eur0(potRec)}</span><span class="d">par an si tout l'annuaire signe · conversion ${conv} %</span></div>
+  </div>
+  <div class="grid2">
+    <section class="panel"><h2>À faire aujourd'hui</h2><p class="sub">Relances dont la date est passée ou tombe aujourd'hui.</p>
+      <div class="rows">${due.length?due.slice(0,10).map(e=>`<button class="row" data-open="${esc(e.id)}"><span class="t">${esc(e.nom)}</span><span class="r"><span class="pill st-${e.statut}">${STL[e.statut]}</span></span><span class="s">${esc(e.commune)}${e.tel?" · "+esc(e.tel):""}</span><span class="r s ${dDays(e.relance)<0?"late":""}">${dDays(e.relance)<0?"en retard de "+(-dDays(e.relance))+" j":"aujourd'hui"}</span></button>`).join(""):`<div class="empty"><b>Aucune relance due</b>Ouvre une fiche et fixe une date de relance : elle apparaîtra ici le jour venu.</div>`}</div></section>
+    <section class="panel"><h2>Les prochains à appeler</h2><p class="sub">Priorité 1 d'abord, puis le plus gros potentiel la 1re année.</p>
+      <div class="rows">${top.length?top.map(e=>`<button class="row" data-open="${esc(e.id)}"><span class="t">${esc(e.nom)}</span><span class="r num">${eur0(pot(e).an1)}</span><span class="s">${esc(e.secteur)} · ${esc(e.commune)}</span><span class="r prio ${e.prio==1?"p1":""}">PRIORITÉ ${e.prio||2}</span></button>`).join(""):`<div class="empty"><b>Tout le monde a été contacté</b>Ajoute de nouvelles entreprises avec le bouton + Entreprise.</div>`}</div></section>
+  </div>
+  <div class="grid3">
+    <section class="panel"><h2>Où en est la prospection</h2><p class="sub">Nombre d'entreprises par étape</p>
+      <div class="hbars">${fun.map(([k,l,n])=>`<button class="hb" data-go="annuaire" data-fst="${k}" title="${esc(l)} : ${n} entreprise${n>1?"s":""}"><span class="t">${l}</span><span class="track"><i style="width:${n/fmax*100}%"></i></span><span class="v">${n}</span></button>`).join("")}</div></section>
+    <section class="panel"><h2>Potentiel 1re année par secteur</h2><p class="sub">Vérifications + plans, profils modifiables dans Outils</p>
+      <div class="hbars">${secs.map(([s,v])=>`<button class="hb" data-go="annuaire" data-fsec="${esc(s)}" title="${esc(s)} : ${eur0(v)}"><span class="t">${esc(s)}</span><span class="track"><i style="width:${v/smax*100}%"></i></span><span class="v">${eur0(v)}</span></button>`).join("")||'<div class="empty">Rien à afficher.</div>'}</div></section>
+    <section class="panel"><h2>Entreprises par commune</h2><p class="sub">Hors « perdu »</p>
+      <div class="hbars">${coms.map(([c,n])=>`<button class="hb" data-go="annuaire" data-fcom="${esc(c)}" title="${esc(c)} : ${n} entreprise${n>1?"s":""}, zone ${zoneOf(c)}"><span class="t">${esc(c)}</span><span class="track"><i style="width:${n/cmax*100}%"></i></span><span class="v">${n}</span></button>`).join("")||'<div class="empty">Rien à afficher.</div>'}</div></section>
+  </div>
+  <div class="grid2">${adminPanel()}${liensPanel()}</div>`;
+}
+
+function viewPipeline(){
+  const E=S.ents.filter(e=>!pipeSec||e.secteur===pipeSec);
+  const secs=[...new Set(S.ents.map(e=>e.secteur))].sort();
+  return `<div class="vhead"><div><h1>Prospection</h1><p>Chaque entreprise avance d'une colonne à l'autre. Ouvre une fiche pour changer son étape.</p></div>
+    <div class="btns"><select id="pipeSec" aria-label="Filtrer par secteur"><option value="">Tous les secteurs</option>${secs.map(s=>`<option ${s===pipeSec?"selected":""}>${esc(s)}</option>`).join("")}</select><button class="btn primary" data-new>+ Entreprise</button></div></div>
+  <div class="board">${STATUTS.map(([k,l])=>{
+    let L=E.filter(e=>e.statut===k).sort((a,b)=>(a.relance||"9").localeCompare(b.relance||"9")||(a.prio||2)-(b.prio||2));
+    const sum=L.reduce((s,e)=>s+(k==="gagne"?(+e.signe||+e.devis||0):k==="devis"?(+e.devis||0):pot(e).an1),0);
+    const cap=k==="a_contacter"?25:200, more=L.length-cap; L=L.slice(0,cap);
+    return `<section class="col"><h3><span class="pill st-${k}">${l}</span><small>${E.filter(e=>e.statut===k).length} · ${eur0(sum)}</small></h3>
+      ${L.map(e=>`<button class="card" data-open="${esc(e.id)}"><b>${esc(e.nom)}</b><span class="s">${esc(e.secteur)} · ${esc(e.commune)}</span>
+      <span class="m"><span class="${e.relance&&dDays(e.relance)<0&&k!=="gagne"&&k!=="perdu"?"late":""}">${e.relance&&k!=="gagne"&&k!=="perdu"?"Relance "+frD(e.relance):'<span class="prio '+(e.prio==1?"p1":"")+'">P'+(e.prio||2)+"</span>"}</span><span class="num">${k==="devis"&&e.devis?eur0(e.devis):k==="gagne"?eur0(+e.signe||+e.devis||0):eur0(pot(e).an1)}</span></span></button>`).join("")||'<p class="more">Vide</p>'}
+      ${more>0?`<a class="more" href="#annuaire" data-fst-link="${k}">+ ${more} autres dans l'annuaire</a>`:""}</section>`}).join("")}</div>`;
+}
+
+function filtered(){
+  const q=F.q.trim().toLowerCase();
+  let L=S.ents.filter(e=>(!F.sec||e.secteur===F.sec)&&(!F.com||e.commune===F.com)&&(!F.zone||String(zoneOf(e.commune))===F.zone)&&(!F.prio||String(e.prio||2)===F.prio)
+    &&(!F.st||(F.st==="relance"?relDue(e):F.st==="actifs"?actif(e):e.statut===F.st))
+    &&(!q||[e.nom,e.secteur,e.commune,e.adresse,e.contact,e.tel,e.email,e.notes].join(" ").toLowerCase().includes(q)));
+  const t=F.tri;
+  L.sort(t==="nom"?(a,b)=>a.nom.localeCompare(b.nom,"fr"):t==="relance"?(a,b)=>(a.relance||"9999").localeCompare(b.relance||"9999"):t==="commune"?(a,b)=>a.commune.localeCompare(b.commune,"fr")||a.nom.localeCompare(b.nom,"fr"):(a,b)=>(a.prio||2)-(b.prio||2)||pot(b).an1-pot(a).an1);
+  return L;
+}
+function viewAnnuaire(){
+  const secs=[...new Set(S.ents.map(e=>e.secteur))].sort(), coms=[...new Set(S.ents.map(e=>e.commune))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const L=filtered(); const tot=L.reduce((s,e)=>s+pot(e).an1,0);
+  const opt=(v,l,cur)=>`<option value="${esc(v)}" ${String(cur)===String(v)?"selected":""}>${esc(l)}</option>`;
+  return `<div class="vhead"><div><h1>Entreprises à démarcher</h1><p>Annuaire de l'Extrême-Sud : hôtels, campings, commerces, garages, ports, syndics, mairies. Coordonnées issues d'annuaires publics, à vérifier au premier appel.</p></div>
+    <div class="btns"><button class="btn" data-export>Exporter (CSV)</button><button class="btn primary" data-new>+ Entreprise</button></div></div>
+  <section class="panel">
+    <div class="filters">
+      <input type="search" id="fq" placeholder="Rechercher un nom, une rue, un téléphone…" value="${esc(F.q)}" aria-label="Rechercher">
+      <select id="fsec" aria-label="Secteur">${opt("","Tous secteurs",F.sec)}${secs.map(s=>opt(s,s,F.sec)).join("")}</select>
+      <select id="fcom" aria-label="Commune">${opt("","Toutes communes",F.com)}${coms.map(s=>opt(s,s,F.com)).join("")}</select>
+      <select id="fzone" aria-label="Zone de déplacement">${opt("","Toutes zones",F.zone)}${opt("1","Zone 1 (≤ 20 km)",F.zone)}${opt("2","Zone 2 (20–50 km)",F.zone)}${opt("3","Au-delà (sur devis)",F.zone)}</select>
+      <select id="fst" aria-label="Étape">${opt("","Toutes étapes",F.st)}${opt("relance","Relance due",F.st)}${opt("actifs","En cours",F.st)}${STATUTS.map(([k,l])=>opt(k,l,F.st)).join("")}</select>
+      <select id="fprio" aria-label="Priorité">${opt("","Toutes priorités",F.prio)}${opt("1","Priorité 1",F.prio)}${opt("2","Priorité 2",F.prio)}${opt("3","Priorité 3",F.prio)}</select>
+      <select id="ftri" aria-label="Trier">${opt("pot","Tri : priorité puis potentiel",F.tri)}${opt("nom","Tri : nom",F.tri)}${opt("commune","Tri : commune",F.tri)}${opt("relance","Tri : date de relance",F.tri)}</select>
+      ${(F.q||F.sec||F.com||F.zone||F.st||F.prio)?'<button class="btn ghost sm" data-reset>Effacer les filtres</button>':""}
+    </div>
+    <div class="count">${L.length} entreprise${L.length>1?"s":""} · potentiel 1re année ${eur0(tot)}</div>
+    <div class="dir">
+      <div class="dirow head"><span>Entreprise</span><span>Secteur</span><span>Commune</span><span style="text-align:right">Potentiel</span><span>Étape</span><span>Relance</span></div>
+      ${L.map(e=>{const p=pot(e);return `<button class="dirow" data-open="${esc(e.id)}">
+        <span><span class="t">${esc(e.nom)}</span> <span class="prio ${e.prio==1?"p1":""}">P${e.prio||2}</span><span class="s" style="display:block">${esc(e.adresse||"")}${e.tel?" · "+esc(e.tel):""}</span></span>
+        <span class="c-sec s">${esc(e.secteur)}</span><span class="c-com s">${esc(e.commune)} · z${zoneOf(e.commune)}</span>
+        <span class="c-pot n">${eur0(p.an1)}</span><span class="c-st"><span class="pill st-${e.statut}">${STL[e.statut]||e.statut}</span></span>
+        <span class="c-rel s ${relDue(e)&&dDays(e.relance)<0?"late":""}">${e.relance&&e.statut!=="gagne"&&e.statut!=="perdu"?frD(e.relance):"—"}</span></button>`}).join("")||`<div class="empty"><b>Aucune entreprise ne correspond</b>Change les filtres ou ajoute l'entreprise avec + Entreprise.</div>`}
+    </div>
+  </section>`;
+}
+
+function viewTarifs(){
+  const all=[];TARIFS.forEach((g,gi)=>g.items.forEach((it,ii)=>all.push({k:gi+"-"+ii,g:g.g,cat:g.cat,l:it[0],p:it[1]})));
+  const byK=Object.fromEntries(all.map(a=>[a.k,a]));
+  EST=EST.filter(l=>byK[l.k]);
+  let tot=0,net=0;const per={vente:0,svc:0,plan:0};
+  EST.forEach(l=>{const a=byK[l.k];const m=a.p*l.q;tot+=m;net+=m*(1-PREL[a.cat]);per[a.cat]+=m});
+  return `<div class="vhead"><div><h1>Tarifs &amp; devis express</h1><p>Ta grille complète au même endroit, et un calcul rapide de ce que te laisse un devis une fois l'URSSAF payée.</p></div></div>
+  <div class="warnbox"><b>Grille de référence : ton outil Chiffrage OmniService.</b> Les lignes marquées « fiche Tarifs » n'existent pas dans le Chiffrage et viennent de ta fiche Tarifs. Ta fiche Tarifs client est alignée sur ces prix depuis le 14/11/2026. La grille « Tarifs plans de sécurité » et le devis type des plans affichent encore les anciens prix.</div>
+  <div class="grid2" style="align-items:start">
+    <section class="panel"><h2>Devis express</h2><p class="sub">Ajoute des lignes depuis la grille avec le bouton +. Le net est une estimation.</p>
+      <div class="est">${EST.length?EST.map((l,i)=>{const a=byK[l.k];return `<div class="eline"><span>${esc(a.l)}<small style="display:block;color:var(--muted);font-size:12.5px">${CATL[a.cat]}</small></span>
+        <input type="number" min="1" step="1" value="${l.q}" data-eq="${i}" aria-label="Quantité" id="eq${i}"><span class="p">${eur(a.p*l.q)}</span><button class="btn ghost sm" data-erm="${i}" aria-label="Retirer">×</button></div>`}).join(""):'<div class="empty">Aucune ligne. Touche + à côté d\'un prix pour l\'ajouter.</div>'}</div>
+      <div class="etot"><div><span>Total client</span><b>${eur(tot)}</b></div><div><span>URSSAF estimée</span><b>${eur(tot-net)}</b></div><div><span>Il te reste</span><b>${eur(net)}</b></div></div>
+      <p class="note">Prélèvements repris de ton Chiffrage : vente 13,4 %, vérifications d’extincteurs 23,68 %, plans 27,9 %. Les taux changent : vérifie-les sur autoentrepreneur.urssaf.fr. Le coût d'achat du matériel n'est pas déduit ici, utilise Chiffrage pour la marge exacte.</p>
+      <div class="btns"><button class="btn" data-ecopy ${EST.length?"":"disabled"}>Copier le récapitulatif</button><button class="btn ghost" data-eclear ${EST.length?"":"disabled"}>Vider</button><a class="btn navy" href="https://claude.ai/artifact/CPBXzGWk2ZKUVbG67SQkS9" target="_blank" rel="noopener">Faire le devis officiel ↗</a></div>
+    </section>
+    <div class="view" style="gap:14px">${TARIFS.map((g,gi)=>`<section class="panel"><h2>${esc(g.g)}</h2><div class="tbl"><table><tbody>${g.items.map((it,ii)=>`<tr><td>${esc(it[0])}${it[2]?`<small>${esc(it[2])}</small>`:""}</td><td class="p">${eur(it[1])}</td><td style="width:1%"><button class="btn sm" data-eadd="${gi}-${ii}" aria-label="Ajouter ${esc(it[0])} au devis express">+</button></td></tr>`).join("")}</tbody></table></div></section>`).join("")}
+      <section class="panel"><h2>Remises et conditions</h2><p class="note">Contrat d'entretien 3 ans : −10 % sur les vérifications. Déplacement offert dès 10 extincteurs (zones 1 et 2). Plans identiques en série : −30 % dès le 2ᵉ. Plan fourni seul sans pose : −25 %. Paiement à 30 jours, à réception pour les particuliers. TVA non applicable, art. 293 B du CGI.</p></section>
+    </div>
+  </div>`;
+}
+
+function viewArgs(){
+  return `<div class="vhead"><div><h1>Arguments &amp; scripts</h1><p>Ce que tu dis au téléphone, secteur par secteur, et un mail type à copier.</p></div></div>
+  <div class="grid2" style="align-items:start">
+    <section class="panel"><h2>Les règles qui font vendre</h2>
+      <div class="tbl"><table><tbody>
+        <tr><td><b>MS 39</b><small>ERP</small></td><td>1 extincteur pour 200 m² <b>et par niveau</b>, minimum 2 par établissement, poignée à 1,20 m maximum. Mesure la surface, divise par 200, compte les niveaux.</td></tr>
+        <tr><td><b>MS 38</b><small>ERP</small></td><td>Vérification <b>une fois par an</b> par une personne compétente, révision à 10 ans, étiquette datée, relevé au registre de sécurité.</td></tr>
+        <tr><td><b>MS 41</b><small>ERP</small></td><td>Plan d'intervention <b>inaltérable</b> à chaque entrée (Dibond ou plexiglas, pas de PVC).</td></tr>
+        <tr><td><b>R4227-37</b><small>Code du travail</small></td><td>Consigne incendie affichée dans chaque local dès 6 personnes. <b>Exercices tous les 6 mois</b> (R4227-39) : souvent ignoré des employeurs.</td></tr>
+        <tr><td><b>NF X 08-070</b><small>déc. 2023</small></td><td>Plans d'évacuation : A3 minimum par étage, 1:250, pose à 1,50 m, 50 lux. La NF S 60-303 est annulée.</td></tr>
+        <tr><td><b>NF S 61-919</b></td><td>Maintenance des extincteurs : vérification annuelle, maintenance additionnelle à 5 ans, révision ou remplacement à 10 ans.</td></tr>
+      </tbody></table></div>
+      <p class="note">Repris de ta fiche Règles du Chiffrage (vérifiée en octobre 2026). Ne promets jamais « conforme garanti » ni un label que tu n'as pas : parle de vérification, de contrôle et de conseil. En cas de doute sur un ERP précis : SDIS 2A.</p>
+    </section>
+    <section class="panel"><h2>Mail de premier contact</h2><div class="script" id="mailtxt">${esc(MAIL("votre établissement"))}</div>
+      <div class="btns"><button class="btn" data-copy="mailtxt">Copier le mail</button></div>
+      <p class="note">Depuis une fiche entreprise, le mail est déjà adressé à son nom.</p></section>
+  </div>
+  <div class="grid2" style="align-items:start">${Object.entries(SCRIPTS).map(([k,t],i)=>`<section class="panel"><h2>${esc(k)}</h2><div class="script" id="sc${i}">${esc(t)}</div><div class="btns"><button class="btn sm" data-copy="sc${i}">Copier</button><button class="btn sm ghost" data-go="annuaire" data-fsec="${esc(k)}">Voir les ${S.ents.filter(e=>e.secteur===k).length} entreprises</button></div></section>`).join("")}</div>`;
+}
+
+function viewOutils(){
+  const P=S.reg.profils||DEF_PROFILS;
+  return `<div class="vhead"><div><h1>Mes outils &amp; réglages</h1><p>Tes autres applis OmniService, et les hypothèses qui calculent le potentiel.</p></div></div>
+  <div class="tools">${OUTILS.map(([n,d,u])=>`<a class="tool" href="${u}" target="_blank" rel="noopener"><b>${esc(n)} ↗</b><span>${esc(d)}</span></a>`).join("")}</div>
+  <form class="panel" id="regf"><h2>Objectif et profils par secteur</h2>
+    <p class="sub">Combien d'extincteurs et de plans tu comptes en moyenne pour un établissement de chaque secteur. Le potentiel d'une fiche = extincteurs × ${PRIX_VERIF} € + plans × ${PRIX_PLAN} € la 1re année, puis extincteurs × ${PRIX_VERIF} € + plans × ${PRIX_VERIF_PLAN} € chaque année. Une fiche peut avoir ses propres chiffres.</p>
+    <label class="f" style="max-width:260px">Objectif de chiffre d'affaires signé sur l'année (€)<input type="number" id="robj" min="0" step="500" value="${esc(S.reg.objectif)}"></label>
+    <div class="tbl"><table><thead><tr><th>Secteur</th><th>Extincteurs</th><th>Plans</th><th style="text-align:right">1re année</th></tr></thead><tbody>
+      ${SECTEURS.map((s,i)=>{const p=P[s]||DEF_PROFILS[s];return `<tr><td>${esc(s)}</td><td><input type="number" min="0" id="pe${i}" value="${p.ext}" style="max-width:90px" aria-label="Extincteurs ${esc(s)}"></td><td><input type="number" min="0" id="pp${i}" value="${p.plans}" style="max-width:90px" aria-label="Plans ${esc(s)}"></td><td class="p">${eur0(p.ext*PRIX_VERIF+p.plans*PRIX_PLAN)}</td></tr>`}).join("")}
+    </tbody></table></div>
+    <div class="btns"><button class="btn primary" type="submit" ${S.db?"":"disabled"}>Enregistrer</button><button class="btn ghost" type="button" data-regreset>Revenir aux valeurs de départ</button></div>
+  </form>
+  <section class="panel"><h2>Sauvegarde et transfert</h2>
+    <p class="note">Tes fiches sont enregistrées dans cette appli, sur cet appareil. Pour passer du PC au téléphone (ou l'inverse), exporte une sauvegarde puis importe-la sur l'autre appareil. Fais-en une de temps en temps pour ne rien perdre.</p>
+    <div class="btns"><button class="btn primary" data-backup>Exporter une sauvegarde</button><label class="btn" for="impfile">Importer une sauvegarde</label><input type="file" id="impfile" accept=".json,application/json" hidden><button class="btn" data-export>Exporter les entreprises (tableur CSV)</button></div>
+    ${pendingImport?`<div class="confirm"><span>Remplacer tes ${S.ents.length} fiches par les ${Object.keys(pendingImport.entreprises).length} de la sauvegarde du ${esc(new Date(pendingImport.exporteLe||Date.now()).toLocaleDateString("fr-FR"))} ?</span><span class="btns"><button class="btn sm" data-impno>Annuler</button><button class="btn sm danger" data-impyes>Oui, remplacer</button></span></div>`:""}
+  </section>
+  <section class="panel"><h2>Apparence</h2><div class="chips" role="group" aria-label="Thème">${[["auto","Automatique"],["light","Clair"],["dark","Sombre"]].map(([k,l])=>`<button class="chip" data-themeset="${k}" aria-pressed="${(lsGet("op-theme","auto"))===k}">${l}</button>`).join("")}</div></section>`;
+}
+
+/* ============ Météo, échéances, terrain ============ */
+function wxAge(){if(!S.meteo||!S.meteo.maj)return null;return (Date.now()-Date.parse(S.meteo.maj))/36e5}
+function conseil(j){if(!j)return "";const a=[];
+  if(j.pluie>=10)a.push("Grosse pluie : journée appels, devis et relances");else if(j.pluie>=2)a.push("Averses : privilégie les visites en intérieur");
+  if(j.vent>=50)a.push("Vent fort : pas de visite en mer, prudence en hauteur");
+  if(!a.length)a.push(j.tmax>=32?"Forte chaleur : tournée tôt le matin":"Bonne journée pour la tournée");return a.join(" · ")}
+function frJour(d,i){if(i===0)return "Aujourd'hui";if(i===1)return "Demain";return new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"short",day:"numeric"})}
+function wxTodayIdx(v){const t=todayISO();const i=(v.jours||[]).findIndex(j=>j.date===t);return i<0?0:i}
+function homeWx(){
+  const M=S.meteo;
+  if(!M||!M.villes)return `<section class="panel"><h2>Météo du secteur</h2><p class="note">Chargement des prévisions… Il faut une connexion internet la première fois.</p><div class="btns"><button class="btn sm ghost wxrefresh" data-wxrefresh><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Actualiser</button></div></section>`;
+  const age=wxAge(), sotta=M.villes.find(v=>v.ville==="Sotta")||M.villes[0], i0=wxTodayIdx(sotta);
+  return `<section class="panel"><div class="vhead" style="align-items:baseline"><h2>Météo du secteur</h2><span class="btns"><button class="btn sm ghost wxrefresh" data-wxrefresh><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Actualiser</button><a class="btn sm ghost" href="#terrain">Prévisions 6 jours →</a></span></div>
+    ${age>12?`<p class="warnbox"><b>Prévisions pas à jour</b> (dernière mise à jour ${new Date(M.maj).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"})}). Pas de connexion ? Touche Actualiser dès que tu as du réseau.</p>`:""}
+    <div class="wxrow">${M.villes.map(v=>{const j=(v.jours||[])[wxTodayIdx(v)]||{};return `<button class="wxc" data-wx="${esc(v.ville)}" title="${esc(v.ville)} : ${esc((CIEL[j.ciel]||CIEL.couvert)[0])}, ${j.tmin}° à ${j.tmax}°, pluie ${j.pluie} mm, vent ${j.vent} km/h">
+      <span class="wv">${esc(v.ville)}</span>${icoCiel(j.ciel)}<span class="wt num">${j.tmax}°<small> / ${j.tmin}°</small></span><span class="wd num">${j.pluie>0?j.pluie+" mm · ":""}${j.vent} km/h</span></button>`}).join("")}</div>
+    <p class="note"><b style="color:var(--fg)">Sotta aujourd'hui :</b> ${esc(conseil(sotta.jours[i0]))}. <b style="color:var(--fg)">Demain :</b> ${esc(conseil(sotta.jours[i0+1]))}.</p></section>`;
+}
+function lastDay(y,m){return new Date(y,m+1,0)}
+function adminPanel(){
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  const prev=new Date(y,m-1,1).toLocaleDateString("fr-FR",{month:"long"});
+  const urs=lastDay(y,m); const cfe=new Date(now>new Date(y,11,15,23)?y+1:y,11,15);
+  const dl=d=>Math.ceil((d-new Date(todayISO()+"T00:00:00"))/864e5);
+  const items=[
+    ["Déclaration URSSAF mensuelle",`Chiffre d'affaires encaissé en ${prev}, à déclarer et payer sur autoentrepreneur.urssaf.fr`,urs],
+    ["CFE (cotisation foncière des entreprises)","Avis sur ton espace professionnel impots.gouv.fr",cfe]
+  ].sort((a,b)=>a[2]-b[2]);
+  return `<section class="panel"><h2>Échéances administratives</h2><p class="sub">Micro-entreprise, déclaration mensuelle avec versement libératoire.</p>
+    <div class="rows">${items.map(([t,s,d])=>{const n=dl(d);return `<div class="row" style="cursor:default"><span class="t">${t}</span><span class="r"><span class="pill ${n<=7?"st-devis":"st-contacte"}">avant le ${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</span></span><span class="s">${s}</span><span class="r s">${n<=0?"aujourd'hui":"dans "+n+" j"}</span></div>`}).join("")}
+    <div class="row" style="cursor:default"><span class="t">Déclaration de revenus (2042-C-PRO)</span><span class="r"><span class="pill">printemps</span></span><span class="s">Report du chiffre d'affaires annuel par catégorie ; dates fixées chaque année</span><span></span></div></div>
+    <p class="note">Dates de référence à confirmer sur autoentrepreneur.urssaf.fr et impots.gouv.fr. Ton agent comptable peut préparer les montants.</p></section>`;
+}
+function liensPanel(){
+  const L=[["Vigilance Météo-France Corse-du-Sud","https://vigilance.meteofrance.fr/fr/corse-du-sud"],["Météo marine","https://meteofrance.com/meteo-marine"],
+    ["Préfecture de Corse-du-Sud (risque incendie, arrêtés)","https://www.corse-du-sud.gouv.fr/"],["URSSAF auto-entrepreneur","https://www.autoentrepreneur.urssaf.fr/"],
+    ["impots.gouv.fr professionnel","https://www.impots.gouv.fr/professionnel"],["Entreprendre service-public","https://entreprendre.service-public.fr/"],["Légifrance (règlement ERP, code du travail)","https://www.legifrance.gouv.fr/"]];
+  return `<section class="panel"><h2>Liens utiles</h2><div class="rows">${L.map(([t,u])=>`<a class="row" href="${u}" target="_blank" rel="noopener" style="text-decoration:none;color:var(--fg)"><span class="t">${esc(t)}</span><span class="r s">↗</span></a>`).join("")}</div></section>`;
+}
+function mapSVG(){
+  const W=560,lat0=41.95,lon0=8.84,kx=111*Math.cos(41.6*Math.PI/180),ky=111,K=W/((9.56-lon0)*kx),H=Math.round((lat0-41.34)*ky*K);
+  const P=c=>[(c[1]-lon0)*kx*K,(lat0-c[0])*ky*K];
+  const cnt={},act={};S.ents.filter(e=>e.statut!=="perdu").forEach(e=>{cnt[e.commune]=(cnt[e.commune]||0)+1;if(actif(e)||e.statut==="gagne")act[e.commune]=(act[e.commune]||0)+1});
+  const [sx,sy]=P(GEO.Sotta);
+  const dots=Object.keys(GEO).map(c=>{const n=cnt[c]||0;const [x,y]=P(GEO[c]);const r=n?5+Math.sqrt(n)*3.2:3.5;
+    return `<g class="mdot" data-go="annuaire" data-fcom="${esc(c)}" tabindex="0" role="button" aria-label="${esc(c)} : ${n} entreprises, environ ${kmFrom(c)} km à vol d'oiseau"><title>${esc(c)} : ${n} entreprise${n>1?"s":""}${act[c]?", dont "+act[c]+" en cours ou signées":""} · ~${kmFrom(c)} km de Sotta</title>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r+8).toFixed(1)}" fill="transparent"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" class="${n?"d-on":"d-off"}"/>${act[c]?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r+3).toFixed(1)}" class="d-ring"/>`:""}
+      <text x="${(x>W-150?x-r-4:x+r+4).toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${x>W-150?"end":"start"}" class="mlab">${esc(c==="Zonza"?"Ste-Lucie (Zonza)":c)}${n?` · ${n}`:""}</text></g>`}).join("");
+  const ring=(km,l)=>`<circle cx="${sx}" cy="${sy}" r="${km*K}" class="zring"/><text x="${sx+4}" y="${sy-km*K+14}" class="zlab">${l}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="map" role="img" aria-label="Carte schématique des communes du secteur, taille des points selon le nombre d'entreprises">
+    ${ring(20,"20 km · zone 1")}${ring(50,"50 km · zone 2")}
+    <path d="M${sx-7} ${sy}h14M${sx} ${sy-7}v14" class="home"/>
+    ${dots}
+    <g transform="translate(${W-120},${H-24})"><path d="M0 0h${(10*K).toFixed(1)}" class="scale"/><text x="0" y="-6" class="zlab">10 km</text></g>
+    <g transform="translate(${W-24},30)"><path d="M0 12 L6 -6 L12 12 L6 7z" class="north"/><text x="6" y="26" text-anchor="middle" class="zlab">N</text></g></svg>`;
+}
+function viewTerrain(){
+  const M=S.meteo, v=M&&M.villes?(M.villes.find(x=>x.ville===wxVille)||M.villes[0]):null;
+  const coms=[...new Set(S.ents.map(e=>e.commune))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const cand=S.ents.filter(e=>tourCom.includes(e.commune)&&e.statut!=="perdu").sort((a,b)=>(relDue(b)-relDue(a))||(a.prio||2)-(b.prio||2)||pot(b).an1-pot(a).an1);
+  tourSel=tourSel.filter(id=>cand.some(e=>e.id===id));
+  const selE=tourSel.map(id=>S.ents.find(e=>e.id===id)).filter(Boolean);
+  const addr=e=>[e.nom,e.adresse&&!/vérifier|relever/i.test(e.adresse)?e.adresse:"",e.commune,"Corse"].filter(Boolean).join(", ");
+  const url=selE.length?"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent("Sotta, Corse")+"&destination="+encodeURIComponent("Sotta, Corse")+"&waypoints="+encodeURIComponent(selE.map(addr).join("|")):"";
+  return `<div class="vhead"><div><h1>Terrain</h1><p>La météo pour organiser la semaine, la carte du secteur jusqu'à Solenzara, Sartène et Propriano, et la préparation d'une tournée.</p></div></div>
+  <section class="panel"><div class="vhead" style="align-items:baseline"><h2>Prévisions 6 jours</h2>${M&&M.maj?`<span class="btns"><span class="count">Mis à jour ${new Date(M.maj).toLocaleString("fr-FR",{weekday:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})} · ${esc(M.source||"")}</span><button class="btn sm ghost wxrefresh" data-wxrefresh><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Actualiser</button></span>`:""}</div>
+    ${M&&M.villes?`<div class="chips" role="group" aria-label="Ville">${M.villes.map(x=>`<button class="chip" data-wx="${esc(x.ville)}" aria-pressed="${x.ville===v.ville}">${esc(x.ville)}</button>`).join("")}</div>
+    ${wxAge()>12?'<p class="warnbox"><b>Prévisions pas à jour.</b> Touche Actualiser dès que tu as du réseau.</p>':""}
+    <div class="tbl"><table><thead><tr><th>Jour</th><th>Ciel</th><th style="text-align:right">Temp.</th><th style="text-align:right">Pluie</th><th style="text-align:right">Vent max</th><th>Pour le travail</th></tr></thead><tbody>
+    ${v.jours.slice(wxTodayIdx(v)).map((j,i)=>`<tr><td><b>${frJour(j.date,i)}</b></td><td><span class="wxcell">${icoCiel(j.ciel)} ${esc((CIEL[j.ciel]||CIEL.couvert)[0])}</span></td><td class="p">${j.tmin}° / ${j.tmax}°</td><td class="p">${j.pluie} mm</td><td class="p ${j.vent>=50?"late":""}">${j.vent} km/h</td><td>${esc(conseil(j))}</td></tr>`).join("")}</tbody></table></div>`
+    :`<div class="empty"><b>Pas encore de prévisions</b>Connecte-toi à internet puis touche Actualiser.</div><div class="btns"><button class="btn sm ghost wxrefresh" data-wxrefresh><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Actualiser</button></div>`}
+    <div class="btns"><a class="btn sm" href="https://vigilance.meteofrance.fr/fr/corse-du-sud" target="_blank" rel="noopener">Vigilance Météo-France ↗</a><a class="btn sm" href="https://meteofrance.com/meteo-marine" target="_blank" rel="noopener">Météo marine ↗</a><a class="btn sm" href="https://www.corse-du-sud.gouv.fr/" target="_blank" rel="noopener">Risque incendie (préfecture) ↗</a></div>
+  </section>
+  <div class="grid2" style="align-items:start">
+    <section class="panel"><h2>Carte du secteur</h2><p class="sub">Taille du point = nombre d'entreprises ; anneau = prospects en cours ou signés. Cercles à vol d'oiseau depuis Sotta (la route est plus longue). Touche une commune pour voir ses entreprises.</p>
+      <div class="mapbox">${mapSVG()}</div>
+      <p class="note">Positions approximatives. Solenzara, Solaro et Olmeto sont au-delà de 50 km par la route : déplacement sur devis, à regrouper sur une même journée.</p></section>
+    <section class="panel"><h2>Préparer une tournée</h2><p class="sub">Choisis les communes, coche jusqu'à 9 arrêts, puis ouvre l'itinéraire aller-retour depuis Sotta.</p>
+      <div class="chips" role="group" aria-label="Communes de la tournée">${coms.map(c=>`<button class="chip" data-tc="${esc(c)}" aria-pressed="${tourCom.includes(c)}">${esc(c)}</button>`).join("")}</div>
+      <div class="rows tourlist">${cand.slice(0,40).map(e=>`<label class="row" style="cursor:pointer"><span class="t"><input type="checkbox" data-tsel="${esc(e.id)}" ${tourSel.includes(e.id)?"checked":""} ${!tourSel.includes(e.id)&&tourSel.length>=9?"disabled":""} style="width:auto;margin-right:8px">${esc(e.nom)}</span><span class="r"><span class="pill st-${e.statut}">${STL[e.statut]}</span></span><span class="s">${esc(e.secteur)} · ${esc(e.commune)}${relDue(e)?' · <span class="late">relance due</span>':""}</span><span class="r num s">${eur0(pot(e).an1)}</span></label>`).join("")||'<div class="empty">Choisis au moins une commune.</div>'}</div>
+      <div class="btns">${url?`<a class="btn primary" href="${url}" target="_blank" rel="noopener">Ouvrir l'itinéraire (${selE.length} arrêt${selE.length>1?"s":""}) ↗</a><button class="btn" data-tcopy>Copier la liste</button><button class="btn ghost" data-tclear>Tout décocher</button>`:'<span class="count">Aucun arrêt coché.</span>'}</div>
+    </section>
+  </div>`;
+}
+/* ============ Fiche ============ */
+function openSheet(id){
+  const e=id?S.ents.find(x=>x.id===id):null;
+  if(id&&!e) return;
+  openId=id||null;
+  draft=JSON.parse(JSON.stringify(e||{nom:"",secteur:"Autre",commune:"Sotta",adresse:"",tel:"",email:"",web:"",contact:"",statut:"a_contacter",prio:2,relance:"",devis:0,signe:0,ext:null,plans:null,notes:"",journal:[],source:"Ajouté à la main",verifie:true}));
+  drawSheet();$("#scrim").hidden=false;$("#sheet").hidden=false;document.body.style.overflow="hidden";
+  setTimeout(()=>{const f=$("#sheet .bar .btn");f&&f.focus()},30);
+}
+function closeSheet(){$("#scrim").hidden=true;$("#sheet").hidden=true;$("#sheet").innerHTML="";document.body.style.overflow="";openId=null;draft=null}
+function drawSheet(){
+  const d=draft, p=pot(d), coms=[...new Set(ZONE1.concat(ZONE2,S.ents.map(e=>e.commune)))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const q=encodeURIComponent(d.nom+" "+d.commune);
+  $("#sheet").innerHTML=`<div class="bar"><h2>${esc(d.nom||"Nouvelle entreprise")}</h2><button class="btn ghost" data-close>Fermer</button><button class="btn primary" data-save ${S.db?"":"disabled"}>Enregistrer</button></div>
+  <div class="body">
+    <div class="stbtns" role="group" aria-label="Étape">${STATUTS.map(([k,l])=>`<button type="button" class="st-${k}" data-setst="${k}" aria-pressed="${d.statut===k}">${l}</button>`).join("")}</div>
+    <div class="potline"><span>Potentiel 1re année <b>${eur0(p.an1)}</b></span><span>Puis par an <b>${eur0(p.rec)}</b></span><span>Hypothèse <b>${p.ext}</b> extincteurs, <b>${p.plans}</b> plans</span><span>Zone <b>${zoneOf(d.commune)}</b></span></div>
+    <div class="fg">
+      <label class="f full">Nom<input id="s-nom" value="${esc(d.nom)}" required></label>
+      <label class="f">Secteur<select id="s-secteur">${SECTEURS.map(s=>`<option ${s===d.secteur?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
+      <label class="f">Commune<input id="s-commune" list="coms" value="${esc(d.commune)}"><datalist id="coms">${coms.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+      <label class="f full">Adresse<input id="s-adresse" value="${esc(d.adresse)}"></label>
+      <label class="f">Contact (nom, fonction)<input id="s-contact" value="${esc(d.contact)}" placeholder="ex. M. Rossi, gérant"></label>
+      <label class="f">Téléphone<input id="s-tel" type="tel" value="${esc(d.tel)}"></label>
+      <label class="f">E-mail<input id="s-email" type="email" value="${esc(d.email)}"></label>
+      <label class="f">Site web<input id="s-web" value="${esc(d.web)}" placeholder="https://"></label>
+      <label class="f">Priorité<select id="s-prio">${[1,2,3].map(n=>`<option value="${n}" ${+d.prio===n?"selected":""}>Priorité ${n}${n===1?" (à appeler vite)":n===3?" (plus tard)":""}</option>`).join("")}</select></label>
+      <label class="f">Prochaine relance<input id="s-relance" type="date" value="${esc(d.relance)}"></label>
+      <div class="full btns"><span class="count">Relancer :</span><button type="button" class="btn sm" data-rel="0">Aujourd'hui</button><button type="button" class="btn sm" data-rel="2">Dans 2 jours</button><button type="button" class="btn sm" data-rel="7">Dans 1 semaine</button><button type="button" class="btn sm" data-rel="30">Dans 1 mois</button><button type="button" class="btn sm" data-rel="90">En février</button><button type="button" class="btn sm ghost" data-rel="x">Aucune</button></div>
+      <label class="f">Montant du devis (€)<input id="s-devis" type="number" min="0" step="1" value="${esc(d.devis||"")}"></label>
+      <label class="f">Montant signé (€)<input id="s-signe" type="number" min="0" step="1" value="${esc(d.signe||"")}"></label>
+      <label class="f">Extincteurs estimés<input id="s-ext" type="number" min="0" value="${d.ext==null?"":esc(d.ext)}" placeholder="profil : ${profil({secteur:d.secteur}).ext}"></label>
+      <label class="f">Plans estimés<input id="s-plans" type="number" min="0" value="${d.plans==null?"":esc(d.plans)}" placeholder="profil : ${profil({secteur:d.secteur}).plans}"></label>
+      <label class="f full">Notes<textarea id="s-notes" placeholder="Nombre d'appareils vus, marque, dates, décideur, saison d'ouverture…">${esc(d.notes)}</textarea></label>
+      <label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="s-verifie" ${d.verifie?"checked":""} style="width:auto"> Coordonnées vérifiées</label>
+    </div>
+    <div class="btns">
+      ${d.tel?`<button type="button" class="btn sm" data-copytxt="${esc(d.tel)}">Copier le n° ${esc(d.tel)}</button>`:""}
+      <a class="btn sm" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Carte ↗</a>
+      <a class="btn sm" href="https://www.pagesjaunes.fr/annuaire/chercherlespros?quoiqui=${encodeURIComponent(d.nom)}&ou=${encodeURIComponent(d.commune)}" target="_blank" rel="noopener">Pages Jaunes ↗</a>
+      <a class="btn sm" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Recherche ↗</a>
+      ${d.web?`<a class="btn sm" href="${esc(/^https?:/.test(d.web)?d.web:"https://"+d.web)}" target="_blank" rel="noopener">Site ↗</a>`:""}
+    </div>
+    <section class="panel"><h2>Journal</h2>
+      <div class="btns" style="flex-wrap:nowrap"><input id="s-jn" placeholder="ex. Appelé, rappeler le gérant mardi" aria-label="Nouvelle note"><button type="button" class="btn" data-jadd>Ajouter</button></div>
+      <div class="journal">${(d.journal||[]).slice().reverse().map(j=>`<div class="jn"><small>${esc(new Date(j.d).toLocaleString("fr-FR",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}))}</small>${esc(j.t)}</div>`).join("")||'<p class="note">Aucune note pour l\'instant. Chaque changement d\'étape s\'y inscrit tout seul.</p>'}</div></section>
+    <section class="panel"><h2>Script d'appel · ${esc(d.secteur)}</h2><div class="script" id="s-script">${esc(SCRIPTS[d.secteur]||SCRIPTS.Autre)}</div>
+      <div class="btns"><button type="button" class="btn sm" data-copy="s-script">Copier le script</button><button type="button" class="btn sm" data-copytxt="${esc(MAIL(d.nom||"votre établissement"))}">Copier le mail type</button></div></section>
+    <p class="note">Source : ${esc(d.source||"")}</p>
+    ${openId?`<div id="delzone"><button type="button" class="btn danger" data-askdel>Supprimer cette entreprise</button></div>`:""}
+  </div>`;
+}
+function readSheet(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():""};
+  const d=draft;
+  d.nom=g("s-nom");d.secteur=g("s-secteur");d.commune=g("s-commune");d.adresse=g("s-adresse");d.contact=g("s-contact");d.tel=g("s-tel");d.email=g("s-email");d.web=g("s-web");
+  d.prio=+g("s-prio")||2;d.relance=g("s-relance");d.devis=+g("s-devis")||0;d.signe=+g("s-signe")||0;
+  const ex=g("s-ext"),pl=g("s-plans");d.ext=ex===""?null:+ex;d.plans=pl===""?null:+pl;d.notes=g("s-notes");
+  const v=document.getElementById("s-verifie");d.verifie=v?v.checked:d.verifie;
+}
+async function saveSheet(){
+  readSheet();const d=draft;
+  if(!d.nom){toast("Donne un nom à l'entreprise");return}
+  if(!S.db){toast("Base indisponible : rien n'a été enregistré");return}
+  const prev=openId?S.ents.find(x=>x.id===openId):null;
+  if(prev&&prev.statut!==d.statut){d.journal=(d.journal||[]).concat([{d:new Date().toISOString(),t:"Étape : "+STL[prev.statut]+" → "+STL[d.statut]}])}
+  if(d.statut==="gagne"&&(!prev||prev.statut!=="gagne")) d.signeLe=todayISO();
+  const body=Object.assign({},d);delete body.id;body.updatedAt=new Date().toISOString();
+  if(!openId) body.createdAt=body.updatedAt;
+  setSync("busy","Envoi…");
+  try{
+    if(openId) await S.db.collection("entreprises").doc(openId).set(body);
+    else await S.db.collection("entreprises").doc().set(body);
+    toast(openId?"Fiche enregistrée":"Entreprise ajoutée");closeSheet();setSync("ok","Enregistré");
+  }catch(err){setSync("off","Erreur");toast(err&&err.code==="quota_exceeded"?"La base est pleine : supprime d'anciennes fiches.":"Enregistrement impossible pour l'instant. Réessaie dans un moment.")}
+}
+
+/* ============ Export ============ */
+async function exportCSV(){
+  const cols=["nom","secteur","commune","zone","adresse","contact","tel","email","web","statut","prio","relance","devis","signe","potentiel_an1","potentiel_annuel","notes"];
+  const q=v=>'"'+String(v??"").replace(/"/g,'""').replace(/\r?\n/g," ")+'"';
+  const lines=[cols.join(";")].concat(S.ents.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr")).map(e=>{const p=pot(e);return [e.nom,e.secteur,e.commune,zoneOf(e.commune),e.adresse,e.contact,e.tel,e.email,e.web,STL[e.statut],e.prio,e.relance,e.devis,e.signe,p.an1,p.rec,e.notes].map(q).join(";")}));
+  await saveFile("omnipilote-entreprises-"+todayISO()+".csv","﻿"+lines.join("\n"),"text/csv");
+}
+
+/* ============ Événements ============ */
+function bindAfter(){
+  const pS=$("#pipeSec");if(pS)pS.onchange=()=>{pipeSec=pS.value;lsSet("op-ps",pipeSec);render()};
+  const map={fq:"q",fsec:"sec",fcom:"com",fzone:"zone",fst:"st",fprio:"prio",ftri:"tri"};
+  Object.entries(map).forEach(([id,k])=>{const el=document.getElementById(id);if(!el)return;
+    el.addEventListener(id==="fq"?"input":"change",()=>{F[k]=el.value;lsSet("op-f",F);
+      if(id==="fq"){clearTimeout(bindAfter.t);bindAfter.t=setTimeout(()=>{const pos=el.selectionStart;render();const n=$("#fq");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},180)}else render()})});
+  const rf=$("#regf");if(rf)rf.onsubmit=async ev=>{ev.preventDefault();if(!S.db)return;
+    const profils={};SECTEURS.forEach((s,i)=>{profils[s]={ext:Math.max(0,+document.getElementById("pe"+i).value||0),plans:Math.max(0,+document.getElementById("pp"+i).value||0)}});
+    try{await S.db.doc("reglages/main").set({objectif:Math.max(0,+$("#robj").value||0),profils});toast("Réglages enregistrés")}catch(e){toast("Enregistrement impossible pour l'instant")}};
+  document.querySelectorAll("[data-eq]").forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.eq;EST[i].q=Math.max(1,parseInt(inp.value,10)||1);lsSet("op-est2",EST);render()});
+}
+document.addEventListener("click",async ev=>{
+  const t=ev.target.closest("button,a,g.mdot");if(!t)return;
+  const ds=t.dataset;
+  if(ds.open!==undefined){openSheet(ds.open);return}
+  if(ds.new!==undefined){openSheet(null);return}
+  if(ds.go){if(ds.fst!==undefined||ds.fsec!==undefined||ds.fcom!==undefined){Object.assign(F,{q:"",sec:ds.fsec||"",com:ds.fcom||"",zone:"",st:ds.fst||"",prio:""});lsSet("op-f",F)}
+    ev.preventDefault();location.hash=ds.go;if(V===ds.go)render();return}
+  if(ds.fstLink){F.st=ds.fstLink;F.sec=pipeSec;lsSet("op-f",F);return}
+  if(ds.reset!==undefined){Object.assign(F,{q:"",sec:"",com:"",zone:"",st:"",prio:""});lsSet("op-f",F);render();return}
+  if(ds.export!==undefined){exportCSV();return}
+  if(ds.copy){const el=document.getElementById(ds.copy);if(el)copy(el.textContent);return}
+  if(ds.copytxt!==undefined){copy(ds.copytxt);return}
+  if(ds.eadd){EST.push({k:ds.eadd,q:1});lsSet("op-est2",EST);render();toast("Ajouté au devis express");return}
+  if(ds.erm!==undefined){EST.splice(+ds.erm,1);lsSet("op-est2",EST);render();return}
+  if(ds.eclear!==undefined){EST=[];lsSet("op-est2",EST);render();return}
+  if(ds.ecopy!==undefined){const all={};TARIFS.forEach((g,gi)=>g.items.forEach((it,ii)=>all[gi+"-"+ii]={l:it[0],p:it[1]}));let tot=0;
+    const L=EST.map(l=>{const a=all[l.k];tot+=a.p*l.q;return l.q+" × "+a.l+" — "+eur(a.p*l.q)});
+    copy(["OmniService Sud Corse — estimation"].concat(L,["","TOTAL : "+eur(tot),"TVA non applicable, art. 293 B du CGI.","Estimation indicative — seul le devis signé fait foi."]).join("\n"));return}
+  if(ds.wx){wxVille=ds.wx;lsSet("op-wx",wxVille);if(V!=="terrain"){location.hash="terrain"}else render();return}
+  if(ds.tc){tourCom=tourCom.includes(ds.tc)?tourCom.filter(c=>c!==ds.tc):tourCom.concat([ds.tc]);lsSet("op-tc",tourCom);render();return}
+  if(ds.tclear!==undefined){tourSel=[];render();return}
+  if(ds.tcopy!==undefined){copy(tourSel.map((id,i)=>{const e=S.ents.find(x=>x.id===id);return (i+1)+". "+e.nom+" — "+[e.adresse,e.commune].filter(Boolean).join(", ")+(e.tel?" — "+e.tel:"")}).join("\n"));return}
+  if(ds.wxrefresh!==undefined){refreshMeteo(true);return}
+  if(ds.backup!==undefined){exportBackup();return}
+  if(ds.impyes!==undefined){applyImport();return}
+  if(ds.impno!==undefined){pendingImport=null;render();return}
+  if(ds.themeset){lsSet("op-theme",ds.themeset);applyTheme();render();return}
+  if(ds.regreset!==undefined){S.reg.profils=JSON.parse(JSON.stringify(DEF_PROFILS));render();toast("Valeurs de départ remises : enregistre pour les garder");return}
+  /* fiche */
+  if(!draft)return;
+  if(ds.close!==undefined){closeSheet();return}
+  if(ds.save!==undefined){saveSheet();return}
+  if(ds.setst){readSheet();draft.statut=ds.setst;
+    if(ds.setst==="contacte"&&!draft.relance)draft.relance=addDays(7);
+    if(ds.setst==="devis"&&!draft.relance)draft.relance=addDays(7);
+    if(ds.setst==="gagne"||ds.setst==="perdu")draft.relance="";
+    drawSheet();return}
+  if(ds.rel!==undefined){readSheet();if(ds.rel==="x")draft.relance="";else if(ds.rel==="90"){const y=new Date().getMonth()>=1?new Date().getFullYear()+1:new Date().getFullYear();draft.relance=y+"-02-02"}else draft.relance=addDays(+ds.rel);drawSheet();return}
+  if(ds.jadd!==undefined){const v=$("#s-jn").value.trim();if(!v)return;readSheet();draft.journal=(draft.journal||[]).concat([{d:new Date().toISOString(),t:v}]);drawSheet();toast("Note ajoutée : pense à enregistrer");return}
+  if(ds.askdel!==undefined){$("#delzone").innerHTML=`<div class="confirm"><span>Supprimer définitivement cette fiche ?</span><span class="btns"><button type="button" class="btn sm" data-nodel>Non</button><button type="button" class="btn sm danger" data-yesdel>Oui, supprimer</button></span></div>`;return}
+  if(ds.nodel!==undefined){$("#delzone").innerHTML=`<button type="button" class="btn danger" data-askdel>Supprimer cette entreprise</button>`;return}
+  if(ds.yesdel!==undefined){try{await S.db.collection("entreprises").doc(openId).delete();toast("Fiche supprimée");closeSheet()}catch(e){toast("Suppression impossible pour l'instant")}return}
+});
+document.addEventListener("change",ev=>{const t=ev.target;if(t.id==="impfile"&&t.files&&t.files[0]){readImport(t.files[0]);t.value="";return}if(t.dataset&&t.dataset.tsel){const id=t.dataset.tsel;tourSel=t.checked?tourSel.concat([id]).slice(0,9):tourSel.filter(x=>x!==id);render()}});
+document.addEventListener("keydown",ev=>{const g=ev.target.closest&&ev.target.closest("g.mdot");if(g&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();Object.assign(F,{q:"",sec:"",com:g.dataset.fcom,zone:"",st:"",prio:""});lsSet("op-f",F);location.hash="annuaire"}});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&draft)closeSheet();if(ev.key==="Enter"&&ev.target&&ev.target.id==="s-jn"){ev.preventDefault();const b=document.querySelector("[data-jadd]");b&&b.click()}});
+$("#scrim").addEventListener("click",closeSheet);
+$("#sheet").addEventListener("change",ev=>{if(ev.target.id==="s-secteur"||ev.target.id==="s-commune"){readSheet();drawSheet()}});
+
+const VIEWS=["accueil","pipeline","annuaire","terrain","tarifs","arguments","outils"];
+function route(){const h=location.hash.replace("#","");const nv=VIEWS.includes(h)?h:"accueil";const go=()=>{V=nv;render(true);window.scrollTo(0,0)};if(document.startViewTransition&&!REDUCED&&S.loaded&&nv!==V)document.startViewTransition(go);else go()}
+window.addEventListener("hashchange",route);
+
+/* ============ Données locales (appli autonome) ============ */
+const LKEY="omnipilote.data.v1";
+const STORE=(function(){
+  let d=null;
+  try{d=JSON.parse(localStorage.getItem(LKEY)||"null")}catch(e){d=null}
+  if(!d||!d.entreprises){
+    const s=window.OMNI_SEED||{entreprises:{},reglages:{},meteo:null};
+    d={entreprises:JSON.parse(JSON.stringify(s.entreprises||{})),reglages:s.reglages||{},meteo:s.meteo||null,creeLe:new Date().toISOString()};
+  }
+  const subs={};
+  function save(){try{localStorage.setItem(LKEY,JSON.stringify(d));return true}catch(e){toast("Mémoire pleine : exporte une sauvegarde puis supprime d'anciennes fiches");return false}}
+  save();
+  return {get d(){return d},save,
+    on(k,fn){(subs[k]=subs[k]||[]).push(fn)},
+    emit(k){(subs[k]||[]).forEach(fn=>{try{fn()}catch(e){console.error(e)}})}};
+})();
+const clone=v=>JSON.parse(JSON.stringify(v));
+const newId=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const LocalDB={
+  collection(name){
+    const snap=()=>({docs:Object.entries(STORE.d[name]||{}).map(([id,v])=>({id,data:()=>v}))});
+    return {
+      onSnapshot(cb){STORE.on(name,()=>cb(snap()));setTimeout(()=>cb(snap()),0);return()=>{}},
+      doc(id){id=id||newId();return {
+        async set(v){STORE.d[name]=STORE.d[name]||{};STORE.d[name][id]=clone(v);if(!STORE.save())throw {code:"quota_exceeded"};STORE.emit(name)},
+        async delete(){delete STORE.d[name][id];STORE.save();STORE.emit(name)}}}
+    };
+  },
+  doc(path){const k=path.split("/")[0];return {
+    async set(v){STORE.d[k]=clone(v);if(!STORE.save())throw {code:"quota_exceeded"};STORE.emit(k)},
+    onSnapshot(cb){const f=()=>cb({data:()=>STORE.d[k]||undefined});STORE.on(k,f);setTimeout(f,0);return()=>{}}}}
+};
+
+/* ============ Météo en direct (api.met.no, secours Open-Meteo) ============ */
+const WX_VILLES=[["Sotta",41.540,9.179],["Porto-Vecchio",41.591,9.279],["Bonifacio",41.387,9.159],["Sainte-Lucie",41.698,9.355],["Solenzara",41.855,9.398],["Sartène",41.621,8.975],["Propriano",41.676,8.903]];
+const WX_UA="OmniPilote/1.0 tableau-de-bord-meteo";
+async function getJSON(url){
+  if(window.omniNative&&window.omniNative.fetchJSON) return window.omniNative.fetchJSON(url);
+  const r=await fetch(url,{headers:{"Accept":"application/json","User-Agent":WX_UA}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+const PARIS_D=new Intl.DateTimeFormat("fr-CA",{timeZone:"Europe/Paris",year:"numeric",month:"2-digit",day:"2-digit"});
+const PARIS_H=new Intl.DateTimeFormat("fr-FR",{timeZone:"Europe/Paris",hour:"2-digit",hourCycle:"h23"});
+function wxSym(code){const c=(code||"").split("_")[0];
+  if(c.includes("thunder"))return "orage";if(c.includes("snow")||c.includes("sleet"))return "neige";
+  if(c.includes("rain")||c.includes("showers"))return "pluie";if(c==="fog")return "brouillard";
+  if(c==="cloudy")return "couvert";if(c==="partlycloudy"||c==="fair")return "eclaircies";if(c==="clearsky")return "soleil";return "couvert"}
+async function wxMetno(lat,lon){
+  const d=await getJSON(`https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`);
+  const J={};let actuel=null;
+  for(const t of d.properties.timeseries){
+    const dt=new Date(t.time),k=PARIS_D.format(dt),h=+PARIS_H.format(dt);
+    const j=J[k]=J[k]||{tmin:99,tmax:-99,pluie:0,vent:0,rafale:0,sym:null,symh:99};
+    const ins=t.data.instant.details,tp=ins.air_temperature,ws=(ins.wind_speed||0)*3.6,wg=(ins.wind_speed_of_gust||0)*3.6;
+    if(tp!=null){j.tmin=Math.min(j.tmin,tp);j.tmax=Math.max(j.tmax,tp)}
+    j.vent=Math.max(j.vent,ws);j.rafale=Math.max(j.rafale,wg);
+    const n1=t.data.next_1_hours;if(n1)j.pluie+=(n1.details&&n1.details.precipitation_amount)||0;
+    const nx=n1||t.data.next_6_hours;
+    if(nx&&Math.abs(h-13)<j.symh){j.symh=Math.abs(h-13);j.sym=nx.summary.symbol_code}
+    if(!actuel)actuel={temp:tp!=null?Math.round(tp):null,vent:Math.round(ws),rafale:Math.round(wg),ciel:wxSym(nx&&nx.summary.symbol_code)};
+  }
+  const jours=Object.keys(J).sort().slice(0,6).map(k=>{const j=J[k];return {date:k,tmin:Math.round(j.tmin),tmax:Math.round(j.tmax),pluie:Math.round(j.pluie*10)/10,vent:Math.round(j.vent),rafale:Math.round(j.rafale),ciel:wxSym(j.sym)}});
+  return {actuel,jours};
+}
+function wmo(c){const m={0:"soleil",1:"eclaircies",2:"eclaircies",3:"couvert",45:"brouillard",48:"brouillard"};if(c in m)return m[c];if(c>=95)return "orage";if([71,73,75,77,85,86].includes(c))return "neige";return "pluie"}
+async function wxOpenMeteo(){
+  const lat=WX_VILLES.map(v=>v[1]).join(","),lon=WX_VILLES.map(v=>v[2]).join(",");
+  let d=await getJSON("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max&current=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m&timezone=Europe%2FParis&forecast_days=6");
+  if(!Array.isArray(d))d=[d];
+  return WX_VILLES.map((v,i)=>{const x=d[i],dd=x.daily,c=x.current;
+    return {ville:v[0],actuel:{temp:Math.round(c.temperature_2m),vent:Math.round(c.wind_speed_10m),rafale:Math.round(c.wind_gusts_10m),ciel:wmo(c.weather_code)},
+      jours:dd.time.map((t,k)=>({date:t,tmin:Math.round(dd.temperature_2m_min[k]),tmax:Math.round(dd.temperature_2m_max[k]),pluie:Math.round((dd.precipitation_sum[k]||0)*10)/10,vent:Math.round(dd.wind_speed_10m_max[k]),rafale:Math.round(dd.wind_gusts_10m_max[k]),ciel:wmo(dd.weather_code[k])}))}});
+}
+let wxBusy=false;
+async function refreshMeteo(force){
+  if(wxBusy)return;const age=wxAge();
+  if(!force&&age!=null&&age<3)return;
+  wxBusy=true;document.body.classList.add("wx-busy");
+  try{
+    let villes,source="MET Norway (api.met.no), CC BY 4.0";
+    try{villes=await Promise.all(WX_VILLES.map(async([n,la,lo])=>Object.assign({ville:n},await wxMetno(la,lo))))}
+    catch(e){villes=await wxOpenMeteo();source="Open-Meteo (api.open-meteo.com), CC BY 4.0"}
+    await LocalDB.doc("meteo/jour").set({maj:new Date().toISOString(),source,villes});
+    if(force)toast("Météo mise à jour");
+  }catch(e){if(force)toast("Pas de connexion : météo non mise à jour")}
+  finally{wxBusy=false;document.body.classList.remove("wx-busy")}
+}
+
+/* ============ Fichiers : sauvegarde, import, CSV ============ */
+async function saveFile(name,text,mime){
+  try{
+    if(window.omniNative&&window.omniNative.saveFile){const ok=await window.omniNative.saveFile(name,text);if(ok)toast("Fichier enregistré");return}
+    const C=window.Capacitor;
+    if(C&&C.isNativePlatform&&C.isNativePlatform()&&window.capacitorFilesystem){
+      const FS=window.capacitorFilesystem.Filesystem,SH=window.capacitorShare.Share;
+      const r=await FS.writeFile({path:name,data:text,directory:"CACHE",encoding:"utf8"});
+      await SH.share({title:name,url:r.uri,dialogTitle:"Enregistrer ou envoyer "+name});return}
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  }catch(e){if(!/cancel/i.test(String(e&&e.message)))toast("Fichier non enregistré")}
+}
+function exportBackup(){
+  const data={app:"OmniPilote",format:1,exporteLe:new Date().toISOString(),entreprises:STORE.d.entreprises,reglages:STORE.d.reglages};
+  saveFile("omnipilote-sauvegarde-"+todayISO()+".json",JSON.stringify(data,null,1),"application/json");
+}
+let pendingImport=null;
+function readImport(file){
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||d.app!=="OmniPilote"||typeof d.entreprises!=="object")throw 0;
+      pendingImport=d;render();toast(Object.keys(d.entreprises).length+" fiches prêtes à importer : confirme plus bas")}
+    catch(e){toast("Ce fichier n'est pas une sauvegarde OmniPilote")}};
+  r.readAsText(file);
+}
+function applyImport(){
+  if(!pendingImport)return;STORE.d.entreprises=clone(pendingImport.entreprises);if(pendingImport.reglages)STORE.d.reglages=clone(pendingImport.reglages);
+  STORE.save();pendingImport=null;STORE.emit("entreprises");STORE.emit("reglages");toast("Sauvegarde importée");
+}
+
+/* ============ Animations ============ */
+const REDUCED=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+function staggerIndex(root){
+  ["kpi","wxc","card","tool"].forEach(c=>root.querySelectorAll("."+c).forEach((el,i)=>el.style.setProperty("--i",i)));
+  root.querySelectorAll(".hbars").forEach(h=>h.querySelectorAll(".hb .track i").forEach((el,i)=>el.style.setProperty("--i",i)));
+  root.querySelectorAll(".mdot").forEach((el,i)=>el.style.setProperty("--i",i));
+}
+function countUp(root){
+  if(REDUCED)return;
+  root.querySelectorAll(".kpi .v").forEach(el=>{
+    const txt=el.textContent, m=txt.match(/[\d\s  ]+/);if(!m)return;
+    const target=parseInt(m[0].replace(/[\s  ]/g,""),10);if(!target)return;
+    const pre=txt.slice(0,m.index),post=txt.slice(m.index+m[0].length),fmt=new Intl.NumberFormat("fr-FR");
+    const t0=performance.now(),dur=1100;
+    (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,4);el.textContent=pre+fmt.format(Math.round(target*e))+post;if(p<1)requestAnimationFrame(step);else el.textContent=txt})(t0);
+  });
+}
+function afterRender(anim){
+  const v=document.getElementById("view");
+  staggerIndex(v);
+  v.classList.toggle("enter",!!anim);
+  if(anim)countUp(v);
+}
+/* halo qui suit la souris */
+document.addEventListener("pointermove",ev=>{const c=ev.target.closest&&ev.target.closest(".kpi,.tool,.card,.wxc");if(!c)return;const r=c.getBoundingClientRect();c.style.setProperty("--mx",(ev.clientX-r.left)+"px");c.style.setProperty("--my",(ev.clientY-r.top)+"px")},{passive:true});
+/* onde au clic */
+document.addEventListener("pointerdown",ev=>{if(REDUCED)return;const b=ev.target.closest&&ev.target.closest(".btn,.chip,.kpi,.wxc");if(!b)return;const r=b.getBoundingClientRect(),s=Math.max(r.width,r.height);const sp=document.createElement("span");sp.className="ripple";sp.style.cssText=`width:${s}px;height:${s}px;left:${ev.clientX-r.left-s/2}px;top:${ev.clientY-r.top-s/2}px`;b.appendChild(sp);setTimeout(()=>sp.remove(),650)},{passive:true});
+
+/* écran d'ouverture avec braises */
+function splash(){
+  const el=document.getElementById("splash");if(!el)return;
+  const done=()=>{el.classList.add("out");setTimeout(()=>el.remove(),900)};
+  if(REDUCED){setTimeout(done,500);return}
+  el.addEventListener("click",done);
+  const cv=el.querySelector("canvas"),g=cv.getContext("2d");let W,H,P=[],run=true;
+  const size=()=>{const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d};size();
+  for(let i=0;i<70;i++)P.push({x:Math.random(),y:1+Math.random()*.6,v:.0015+Math.random()*.004,r:1+Math.random()*2.6,w:Math.random()*6.28,c:Math.random()<.7?"255,111,97":"46,196,160"});
+  (function loop(){if(!run)return;g.clearRect(0,0,W,H);
+    for(const p of P){p.y-=p.v;p.w+=.03;if(p.y<-.05){p.y=1.05;p.x=Math.random()}
+      const x=(p.x+Math.sin(p.w)*.01)*W,y=p.y*H,a=Math.min(1,(1-p.y)*1.4)*(p.y>.05?1:p.y*20);
+      const gr=g.createRadialGradient(x,y,0,x,y,p.r*6*(devicePixelRatio||1));gr.addColorStop(0,`rgba(${p.c},${.55*a})`);gr.addColorStop(1,`rgba(${p.c},0)`);
+      g.fillStyle=gr;g.beginPath();g.arc(x,y,p.r*6*(devicePixelRatio||1),0,6.28);g.fill()}
+    requestAnimationFrame(loop)})();
+  setTimeout(()=>{run=false;done()},2600);
+}
+
+/* ============ Données ============ */
+function setSync(c,t){["#sync","#sync2"].forEach(s=>{const e=$(s);if(!e)return;e.className="sync "+c;e.lastElementChild.textContent=t})}
+function applyTheme(){const t=lsGet("op-theme","auto");if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t)}
+let firstLoad=true;
+function connect(){
+  S.db=LocalDB;
+  LocalDB.collection("entreprises").onSnapshot(snap=>{
+    S.loaded=true;S.ents=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+    setSync("ok",S.ents.length+" fiches · sur cet appareil");
+    if(draft&&openId&&!S.ents.find(e=>e.id===openId)){closeSheet()}
+    render(firstLoad);firstLoad=false;
+  });
+  LocalDB.doc("meteo/jour").onSnapshot(s=>{const d=s.data&&s.data();if(d){S.meteo=d;if(!draft&&!firstLoad)render()}});
+  LocalDB.doc("reglages/main").onSnapshot(s=>{const d=s.data&&s.data();if(d&&d.profils){S.reg={objectif:d.objectif??15000,profils:Object.assign({},DEF_PROFILS,d.profils||{})};if(!draft&&!firstLoad)render()}});
+}
+applyTheme();route();connect();splash();setTimeout(()=>refreshMeteo(false),2800);setInterval(()=>refreshMeteo(false),36e5);
+})();
+</script>
+</body>
+</html>

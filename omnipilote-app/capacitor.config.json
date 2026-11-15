@@ -1,0 +1,7 @@
+{
+  "appId": "corsica.omniservice.omnipilote",
+  "appName": "OmniPilote",
+  "webDir": "www",
+  "android": { "backgroundColor": "#0b1622" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}
