@@ -24,10 +24,26 @@
   "build": {
     "appId": "corsica.omniservice.omnipilote",
     "productName": "OmniPilote",
-    "directories": { "output": "dist" },
-    "files": ["electron/**", "www/**", "package.json"],
-    "win": { "icon": "build/icon.png", "artifactName": "OmniPilote-${version}-${arch}-${target}.${ext}" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "OmniPilote" },
-    "portable": { "artifactName": "OmniPilote-${version}-portable.exe" }
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**",
+      "www/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "artifactName": "OmniPilote-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "OmniPilote",
+      "artifactName": "OmniPilote-${version}-installation.${ext}"
+    },
+    "portable": {
+      "artifactName": "OmniPilote-${version}-portable.exe"
+    }
   }
 }
