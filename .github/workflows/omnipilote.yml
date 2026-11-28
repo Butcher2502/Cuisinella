@@ -1,0 +1,80 @@
+name: OmniPilote - applis Windows et Android
+
+on:
+  push:
+    branches: [ccr-b6bcdf9b-7os1a2, main]
+    paths: ["omnipilote-app/**", ".github/workflows/omnipilote.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Appli Windows (.exe)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: omnipilote-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx electron-builder --win portable nsis --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OmniPilote-Windows
+          path: omnipilote-app/dist/*.exe
+          if-no-files-found: error
+
+  android:
+    name: Appli Android (.apk)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: omnipilote-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - run: npx cap sync android
+      - name: Compilation de l'APK signé
+        working-directory: omnipilote-app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../OmniPilote-${{ github.run_number }}.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OmniPilote-Android
+          path: omnipilote-app/OmniPilote-*.apk
+          if-no-files-found: error
+
+  release:
+    name: Publication des téléchargements
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - name: Création de la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -R out
+          gh release create "omnipilote-v1.1.${{ github.run_number }}" out/*/* \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "OmniPilote 1.1.${{ github.run_number }}" \
+            --notes "Appli OmniPilote pour Windows (installateur ou version portable) et Android (APK). Sous Windows, si SmartScreen s'affiche : Informations complémentaires, puis Exécuter quand même. Sous Android : autoriser l'installation depuis cette source."
