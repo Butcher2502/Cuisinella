@@ -248,6 +248,12 @@ svg.map{width:100%;min-width:380px;height:auto;display:block;background:var(--su
 .mlab{font-size:12px;fill:var(--fg);font-family:var(--body);font-weight:600;paint-order:stroke;stroke:var(--sunk);stroke-width:3px}
 .mdot{cursor:pointer}.mdot:hover .d-on,.mdot:focus .d-on{fill:var(--accent)}
 .scale{stroke:var(--fg);stroke-width:2}.north{fill:var(--fg)}
+.dv-en_cours{background:var(--bar-soft);color:var(--bar)}.dv-accepte{background:var(--good-soft);color:var(--good)}
+.dv-refuse{background:var(--idle-soft);color:var(--muted)}.dv-sf{background:var(--warn-soft);color:var(--warn);margin-left:4px}
+.kpi.warnk{border-color:var(--warn);background:var(--warn-soft)}.kpi.warnk .v{color:var(--warn)}
+.sfbox{background:var(--warn-soft);border-radius:10px;padding:12px}
+.row .r .pill+.pill{margin-top:2px}
+@media (max-width:860px){nav.rail a.hide-m{display:none}}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:60;font-weight:700;font-size:14px;max-width:calc(100% - 32px)}
 .loading{color:var(--muted);padding:24px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -394,10 +400,11 @@ svg.wx .bolt{animation:bolt 2.2s steps(1) infinite}
   </div>
   <a href="#accueil" data-v="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg><span class="lbl-long">Tableau de bord</span><span class="lbl-short">Accueil</span></a>
   <a href="#pipeline" data-v="pipeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v6h-4z"/></svg><span class="lbl-long">Prospection</span><span class="lbl-short">Ventes</span></a>
+  <a href="#devis" data-v="devis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span class="lbl-long">Devis</span><span class="lbl-short">Devis</span></a>
   <a href="#annuaire" data-v="annuaire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21V7l6-4 6 4v14M15 21V11h6v10M3 21h18M7 10h4M7 14h4M7 18h4"/></svg><span class="lbl-long">Entreprises</span><span class="lbl-short">Entreprises</span></a>
   <a href="#terrain" data-v="terrain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg><span class="lbl-long">Terrain : météo, carte, tournée</span><span class="lbl-short">Terrain</span></a>
   <a href="#tarifs" data-v="tarifs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span class="lbl-long">Tarifs &amp; devis express</span><span class="lbl-short">Tarifs</span></a>
-  <a href="#arguments" data-v="arguments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="lbl-long">Arguments &amp; scripts</span><span class="lbl-short">Scripts</span></a>
+  <a href="#arguments" data-v="arguments" class="hide-m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="lbl-long">Arguments &amp; scripts</span><span class="lbl-short">Scripts</span></a>
   <a href="#outils" data-v="outils"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span class="lbl-long">Mes outils &amp; réglages</span><span class="lbl-short">Outils</span></a>
   <div class="foot"><span class="sync" id="sync"><i></i><span>Connexion…</span></span></div>
 </nav>
@@ -550,7 +557,7 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 async function copy(txt,btn){try{await navigator.clipboard.writeText(txt);toast("Copié")}catch(e){toast("Copie impossible ici : sélectionne le texte à la main")}}
 
 /* ============ État ============ */
-const S={ents:[],reg:{objectif:15000,profils:DEF_PROFILS},db:null,loaded:false,offline:false,meteo:null};
+const S={devis:[],ents:[],reg:{objectif:15000,profils:DEF_PROFILS},db:null,loaded:false,offline:false,meteo:null};
 let wxVille=lsGet("op-wx","Sotta"), tourCom=lsGet("op-tc",["Porto-Vecchio"]), tourSel=[];
 let V="accueil", openId=null, draft=null;
 const F=Object.assign({q:"",sec:"",com:"",st:"",zone:"",prio:"",tri:"pot"},lsGet("op-f",{}));
@@ -570,8 +577,8 @@ function render(anim){
   setNav();
   const v=$("#view");
   if(S.offline){v.innerHTML=`<div class="panel"><div class="empty"><b>Base indisponible ici</b>Ouvre OmniPilote depuis ton compte Claude (ordinateur ou application) pour retrouver tes prospects. Les tarifs et les scripts restent consultables.</div></div>`+(V==="tarifs"?viewTarifs():V==="arguments"?viewArgs():V==="outils"?viewOutils():"");bindAfter();return}
-  if(!S.loaded&&["accueil","pipeline","annuaire","terrain"].includes(V)){v.innerHTML=`<p class="loading">Chargement de tes entreprises et prospects…</p>`;return}
-  v.innerHTML=({accueil:viewAccueil,pipeline:viewPipeline,annuaire:viewAnnuaire,terrain:viewTerrain,tarifs:viewTarifs,arguments:viewArgs,outils:viewOutils}[V]||viewAccueil)();
+  if(!S.loaded&&["accueil","pipeline","devis","annuaire","terrain"].includes(V)){v.innerHTML=`<p class="loading">Chargement de tes entreprises et prospects…</p>`;return}
+  v.innerHTML=({accueil:viewAccueil,pipeline:viewPipeline,devis:viewDevis,annuaire:viewAnnuaire,terrain:viewTerrain,tarifs:viewTarifs,arguments:viewArgs,outils:viewOutils}[V]||viewAccueil)();
   bindAfter();afterRender(anim);
 }
 
@@ -590,10 +597,11 @@ function viewAccueil(){
   const act=E.filter(actif);
   const due=E.filter(relDue).sort((a,b)=>a.relance.localeCompare(b.relance));
   const late=due.filter(e=>dDays(e.relance)<0).length;
-  const devis=E.filter(e=>e.statut==="devis");
-  const devisSum=devis.reduce((s,e)=>s+(+e.devis||0),0);
-  const won=E.filter(e=>e.statut==="gagne"&&(!e.signeLe||e.signeLe.startsWith(y)));
-  const wonSum=won.reduce((s,e)=>s+(+e.signe||+e.devis||0),0);
+  const dv=dvStats(), linked=new Set(S.devis.map(d=>d.clientId).filter(Boolean));
+  const devis=dv.enc.concat(E.filter(e=>e.statut==="devis"&&!linked.has(e.id)));
+  const devisSum=dv.encSum+E.filter(e=>e.statut==="devis"&&!linked.has(e.id)).reduce((s,e)=>s+(+e.devis||0),0);
+  const won=E.filter(e=>e.statut==="gagne"&&!linked.has(e.id)&&(!e.signeLe||e.signeLe.startsWith(y)));
+  const wonSum=dv.accYSum+won.reduce((s,e)=>s+(+e.signe||+e.devis||0),0);
   const obj=+S.reg.objectif||0, pct=obj?Math.min(100,Math.round(wonSum/obj*100)):0;
   const potRec=E.filter(e=>e.statut!=="perdu").reduce((s,e)=>s+pot(e).rec,0);
   const contactes=E.filter(e=>e.statut!=="a_contacter").length;
@@ -617,8 +625,10 @@ function viewAccueil(){
     <button class="kpi ${late?"alert":""}" data-go="annuaire" data-fst="relance"><span class="k">Relances à faire</span><span class="v">${due.length}</span><span class="d">${late?late+" en retard":"aujourd'hui et en retard"}</span></button>
     <button class="kpi" data-go="annuaire" data-fst="a_contacter"><span class="k">Entreprises à contacter</span><span class="v">${aC}</span><span class="d">sur ${E.length} dans l'annuaire</span></button>
     <button class="kpi" data-go="pipeline"><span class="k">Prospects en cours</span><span class="v">${act.length}</span><span class="d">contactés, en RDV ou en devis</span></button>
-    <button class="kpi" data-go="pipeline"><span class="k">Devis en attente</span><span class="v">${eur0(devisSum)}</span><span class="d">${devis.length} devis envoyé${devis.length>1?"s":""}</span></button>
+    <button class="kpi" data-dvf="en_cours"><span class="k">Devis en cours</span><span class="v">${eur0(devisSum)}</span><span class="d">${devis.length} devis envoyé${devis.length>1?"s":""}</span></button>
     <div class="kpi" style="cursor:default"><span class="k">Signé en ${y}</span><span class="v">${eur0(wonSum)}</span><div class="meter" role="img" aria-label="${pct} % de l'objectif"><i style="width:${pct}%"></i></div><span class="d">${pct} % de l'objectif de ${eur0(obj)}</span></div>
+    <button class="kpi" data-dvf="accepte"><span class="k">Devis acceptés</span><span class="v">${eur0(dv.accSum)}</span><span class="d">${dv.acc.length} accepté${dv.acc.length>1?"s":""} au total</span></button>
+    <button class="kpi ${dv.sf.length?"warnk":""}" data-dvf="sf"><span class="k">Sans facture</span><span class="v">${eur0(dv.sfSum)}</span><span class="d">${dv.sf.length?dv.sf.length+" facture"+(dv.sf.length>1?"s":"")+" à faire":"tout est facturé"}</span></button>
     <div class="kpi" style="cursor:default"><span class="k">Actions cette semaine</span><span class="v">${act7}</span><span class="d">notes et changements d'étape sur 7 jours</span></div>
     <div class="kpi" style="cursor:default"><span class="k">Potentiel récurrent</span><span class="v">${eur0(potRec)}</span><span class="d">par an si tout l'annuaire signe · conversion ${conv} %</span></div>
   </div>
@@ -738,7 +748,7 @@ function viewArgs(){
 function viewOutils(){
   const P=S.reg.profils||DEF_PROFILS;
   return `<div class="vhead"><div><h1>Mes outils &amp; réglages</h1><p>Tes autres applis OmniService, et les hypothèses qui calculent le potentiel.</p></div></div>
-  <div class="tools">${OUTILS.map(([n,d,u])=>`<a class="tool" href="${u}" target="_blank" rel="noopener"><b>${esc(n)} ↗</b><span>${esc(d)}</span></a>`).join("")}</div>
+  <div class="tools"><a class="tool" href="#arguments"><b>Arguments &amp; scripts</b><span>Règles qui font vendre, scripts d'appel, mail type</span></a>${OUTILS.map(([n,d,u])=>`<a class="tool" href="${u}" target="_blank" rel="noopener"><b>${esc(n)} ↗</b><span>${esc(d)}</span></a>`).join("")}</div>
   <form class="panel" id="regf"><h2>Objectif et profils par secteur</h2>
     <p class="sub">Combien d'extincteurs et de plans tu comptes en moyenne pour un établissement de chaque secteur. Le potentiel d'une fiche = extincteurs × ${PRIX_VERIF} € + plans × ${PRIX_PLAN} € la 1re année, puis extincteurs × ${PRIX_VERIF} € + plans × ${PRIX_VERIF_PLAN} € chaque année. Une fiche peut avoir ses propres chiffres.</p>
     <label class="f" style="max-width:260px">Objectif de chiffre d'affaires signé sur l'année (€)<input type="number" id="robj" min="0" step="500" value="${esc(S.reg.objectif)}"></label>
@@ -840,6 +850,125 @@ function viewTerrain(){
     </section>
   </div>`;
 }
+/* ============ Devis ============ */
+const DV_ST=[["en_cours","En cours"],["accepte","Accepté"],["refuse","Refusé"]];
+const DVL=Object.fromEntries(DV_ST);
+let dvFilter=lsGet("op-dvf","tous"), dvDraft=null, dvOpen=null;
+const dvTot=d=>(d.lignes&&d.lignes.length)?Math.round(d.lignes.reduce((s,l)=>s+(+l.pu||0)*(+l.q||0),0)*100)/100:(+d.montant||0);
+function dvNext(){const y=new Date().getFullYear(),pre="D-"+y+"-";let m=0;S.devis.forEach(d=>{if((d.num||"").startsWith(pre)){const n=parseInt(d.num.slice(pre.length),10);if(n>m)m=n}});return pre+String(m+1).padStart(3,"0")}
+function dvStats(){
+  const y=String(new Date().getFullYear()),D=S.devis;
+  const enc=D.filter(d=>d.statut==="en_cours"),acc=D.filter(d=>d.statut==="accepte"),sf=D.filter(d=>d.statut==="accepte"&&d.sansFacture);
+  const accY=acc.filter(d=>(d.accepteLe||d.date||"").startsWith(y));
+  const sum=a=>a.reduce((s,d)=>s+dvTot(d),0);
+  return {enc,acc,sf,accY,encSum:sum(enc),accSum:sum(acc),sfSum:sum(sf),accYSum:sum(accY)};
+}
+function dvRow(d){
+  const late=d.statut==="en_cours"&&d.date&&dDays(d.date)<-30;
+  return `<button class="row" data-dvopen="${esc(d.id)}"><span class="t">${esc(d.clientNom||"Sans client")} <span class="prio">${esc(d.num||"")}</span></span>
+    <span class="r num">${eur(dvTot(d))}</span>
+    <span class="s">${esc(d.objet||"")}${d.date?" · "+frD(d.date):""}${late?' · <span class="late">plus d\'un mois sans réponse</span>':""}</span>
+    <span class="r"><span class="pill dv-${d.statut}">${DVL[d.statut]}</span>${d.sansFacture&&d.statut==="accepte"?'<span class="pill dv-sf">Sans facture</span>':""}</span></button>`;
+}
+function viewDevis(){
+  const st=dvStats(),D=S.devis.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.num||"").localeCompare(a.num||""));
+  const F2={tous:()=>true,en_cours:d=>d.statut==="en_cours",accepte:d=>d.statut==="accepte",sf:d=>d.statut==="accepte"&&d.sansFacture,refuse:d=>d.statut==="refuse"};
+  const L=D.filter(F2[dvFilter]||F2.tous);
+  const grp=(t,arr)=>arr.length?`<section class="panel"><h2>${t} <span class="count">${arr.length} · ${eur(arr.reduce((s,d)=>s+dvTot(d),0))}</span></h2><div class="rows">${arr.map(dvRow).join("")}</div></section>`:"";
+  const body=dvFilter==="tous"?grp("Devis en cours",L.filter(F2.en_cours))+grp("Devis acceptés",L.filter(F2.accepte))+grp("Devis refusés",L.filter(F2.refuse))
+    :grp({en_cours:"Devis en cours",accepte:"Devis acceptés",sf:"Acceptés sans facture",refuse:"Devis refusés"}[dvFilter],L);
+  return `<div class="vhead"><div><h1>Devis</h1><p>Tes devis en cours, acceptés et refusés, avec les travaux faits sans facture à régulariser.</p></div>
+    <div class="btns"><button class="btn primary" data-dvnew>+ Devis</button></div></div>
+  <div class="kpis">
+    <button class="kpi" data-dvf="en_cours"><span class="k">Devis en cours</span><span class="v">${eur0(st.encSum)}</span><span class="d">${st.enc.length} en attente de réponse</span></button>
+    <button class="kpi" data-dvf="accepte"><span class="k">Devis acceptés</span><span class="v">${eur0(st.accSum)}</span><span class="d">${st.acc.length} accepté${st.acc.length>1?"s":""} · ${eur0(st.accYSum)} cette année</span></button>
+    <button class="kpi ${st.sf.length?"warnk":""}" data-dvf="sf"><span class="k">Sans facture</span><span class="v">${eur0(st.sfSum)}</span><span class="d">${st.sf.length===1?"1 travail accepté":st.sf.length+" travaux acceptés"} sans facture</span></button>
+  </div>
+  <div class="chips" role="group" aria-label="Filtrer">${[["tous","Tous"],["en_cours","En cours"],["accepte","Acceptés"],["sf","Sans facture"],["refuse","Refusés"]].map(([k,l])=>`<button class="chip" data-dvf="${k}" aria-pressed="${dvFilter===k}">${l}</button>`).join("")}</div>
+  ${body||`<div class="panel"><div class="empty"><b>Aucun devis ${dvFilter==="tous"?"pour l'instant":"dans cette catégorie"}</b>Crée ton premier devis avec le bouton + Devis, ou depuis la fiche d'une entreprise.</div></div>`}
+  <p class="note">La case « Sans facture » sert à repérer les travaux acceptés pour lesquels la facture n'est pas encore faite. Toute somme encaissée se déclare à l'URSSAF, et la facture est obligatoire pour un client professionnel (et pour un particulier au-delà de 25 €).</p>`;
+}
+function openDevis(id,preset){
+  const d=id?S.devis.find(x=>x.id===id):null;if(id&&!d)return;
+  dvOpen=id||null;
+  dvDraft=JSON.parse(JSON.stringify(d||Object.assign({num:dvNext(),date:todayISO(),clientId:"",clientNom:"",objet:"",lignes:[],montant:0,statut:"en_cours",sansFacture:false,factureNum:"",paye:false,notes:""},preset||{})));
+  drawDevis();$("#scrim").hidden=false;$("#sheet").hidden=false;document.body.style.overflow="hidden";
+}
+function closeDevis(){dvDraft=null;dvOpen=null;$("#scrim").hidden=true;$("#sheet").hidden=true;$("#sheet").innerHTML="";document.body.style.overflow=""}
+function drawDevis(){
+  const d=dvDraft,all=[];TARIFS.forEach((g,gi)=>g.items.forEach((it,ii)=>all.push([gi+"-"+ii,g.g,it[0],it[1]])));
+  const ents=S.ents.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr"));
+  $("#sheet").innerHTML=`<div class="bar"><h2>${dvOpen?"Devis "+esc(d.num):"Nouveau devis"}</h2><button class="btn ghost" data-dvclose>Fermer</button><button class="btn primary" data-dvsave ${S.db?"":"disabled"}>Enregistrer</button></div>
+  <div class="body">
+    <div class="stbtns" role="group" aria-label="Statut du devis">${DV_ST.map(([k,l])=>`<button type="button" class="dv-${k}" data-dvst="${k}" aria-pressed="${d.statut===k}">${l}</button>`).join("")}</div>
+    <label class="f full sfbox"><span style="display:flex;align-items:center;gap:10px;color:var(--fg);font-size:15px"><input type="checkbox" id="dv-sf" ${d.sansFacture?"checked":""} style="width:22px;height:22px;accent-color:var(--warn)"> <b>Sans facture</b> : travail accepté, facture pas encore faite</span></label>
+    <div class="fg">
+      <label class="f">N° de devis<input id="dv-num" value="${esc(d.num)}"></label>
+      <label class="f">Date<input id="dv-date" type="date" value="${esc(d.date)}"></label>
+      <label class="f full">Client (entreprise de l'annuaire)<select id="dv-cid"><option value="">— Autre client, saisi à la main —</option>${ents.map(e=>`<option value="${esc(e.id)}" ${e.id===d.clientId?"selected":""}>${esc(e.nom)} · ${esc(e.commune)}</option>`).join("")}</select></label>
+      <label class="f full">Nom du client<input id="dv-nom" value="${esc(d.clientNom)}" placeholder="ex. M. Rossi, particulier à Sotta"></label>
+      <label class="f full">Objet<input id="dv-objet" value="${esc(d.objet)}" placeholder="ex. Vérification de 6 extincteurs et pose de 2 plans"></label>
+    </div>
+    <section class="panel"><h2>Lignes du devis</h2>
+      <div class="btns"><select id="dv-add" aria-label="Ajouter une prestation de la grille" style="flex:1 1 260px;width:auto"><option value="">+ Ajouter une ligne de la grille de prix…</option>${TARIFS.map((g,gi)=>`<optgroup label="${esc(g.g)}">${g.items.map((it,ii)=>`<option value="${gi}-${ii}">${esc(it[0])} — ${eur(it[1])}</option>`).join("")}</optgroup>`).join("")}</select><button type="button" class="btn" data-dvfree>+ Ligne libre</button></div>
+      <div class="est">${(d.lignes||[]).map((l,i)=>`<div class="eline"><input value="${esc(l.d)}" data-dvl="${i}" data-k="d" aria-label="Désignation"><input type="number" min="0" step="any" value="${l.q}" data-dvl="${i}" data-k="q" aria-label="Quantité"><input type="number" min="0" step="0.01" value="${l.pu}" data-dvl="${i}" data-k="pu" aria-label="Prix unitaire" style="max-width:110px"><button type="button" class="btn ghost sm" data-dvrm="${i}" aria-label="Retirer">×</button></div>`).join("")||'<p class="note">Aucune ligne : ajoute des prestations de ta grille, ou saisis directement le montant ci-dessous.</p>'}</div>
+      ${(d.lignes||[]).length?`<div class="etot"><div><span>Total du devis</span><b id="dv-total">${eur(dvTot(d))}</b></div></div>`:`<label class="f" style="max-width:220px">Montant total (€)<input id="dv-montant" type="number" min="0" step="0.01" value="${esc(d.montant||"")}"></label>`}
+    </section>
+    <div class="fg">
+      <label class="f">N° de facture (une fois faite)<input id="dv-fact" value="${esc(d.factureNum)}"></label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg);padding-top:22px"><input type="checkbox" id="dv-paye" ${d.paye?"checked":""} style="width:auto"> Payé</label>
+      <label class="f full">Notes<textarea id="dv-notes">${esc(d.notes)}</textarea></label>
+    </div>
+    <div class="btns"><a class="btn navy" href="https://claude.ai/artifact/CPBXzGWk2ZKUVbG67SQkS9" target="_blank" rel="noopener">Faire le devis ou la facture PDF ↗</a><button type="button" class="btn" data-dvcopy>Copier le récapitulatif</button></div>
+    ${dvOpen?`<div id="dvdel"><button type="button" class="btn danger" data-dvask>Supprimer ce devis</button></div>`:""}
+  </div>`;
+}
+function readDevis(){
+  const d=dvDraft,g=id=>{const e=document.getElementById(id);return e?e.value.trim():null};
+  d.num=g("dv-num")||d.num;d.date=g("dv-date")||"";d.clientId=g("dv-cid")||"";d.clientNom=g("dv-nom")||"";d.objet=g("dv-objet")||"";
+  d.factureNum=g("dv-fact")||"";d.notes=g("dv-notes")||"";d.sansFacture=!!(document.getElementById("dv-sf")||{}).checked;d.paye=!!(document.getElementById("dv-paye")||{}).checked;
+  if(document.getElementById("dv-montant"))d.montant=+g("dv-montant")||0;
+  document.querySelectorAll("[data-dvl]").forEach(el=>{const l=d.lignes[+el.dataset.dvl];if(!l)return;const k=el.dataset.k;l[k]=k==="d"?el.value:(+el.value||0)});
+  if(d.lignes.length)d.montant=dvTot(d);
+}
+async function saveDevis(){
+  readDevis();const d=dvDraft;
+  if(!d.clientNom&&!d.clientId){toast("Indique le client du devis");return}
+  if(!S.db){toast("Base indisponible : rien n'a été enregistré");return}
+  const prev=dvOpen?S.devis.find(x=>x.id===dvOpen):null;
+  if(d.statut==="accepte"&&(!prev||prev.statut!=="accepte"))d.accepteLe=todayISO();
+  const body=Object.assign({},d);delete body.id;body.updatedAt=new Date().toISOString();if(!dvOpen)body.createdAt=body.updatedAt;
+  try{
+    if(dvOpen)await S.db.collection("devis").doc(dvOpen).set(body);else await S.db.collection("devis").doc().set(body);
+    const e=d.clientId&&S.ents.find(x=>x.id===d.clientId);
+    if(e&&(!prev||prev.statut!==d.statut)){
+      const up=Object.assign({},e);delete up.id;
+      if(d.statut==="accepte"){up.statut="gagne";up.signe=(+e.signe||0)+dvTot(d);up.signeLe=todayISO();up.relance=""}
+      else if(d.statut==="en_cours"&&!["gagne"].includes(e.statut)){up.statut="devis";up.devis=dvTot(d);if(!up.relance)up.relance=addDays(7)}
+      up.journal=(e.journal||[]).concat([{d:new Date().toISOString(),t:"Devis "+d.num+" ("+eur(dvTot(d))+") : "+DVL[d.statut]}]);
+      await S.db.collection("entreprises").doc(e.id).set(up);
+    }
+    toast(dvOpen?"Devis enregistré":"Devis créé");closeDevis();render();
+  }catch(err){toast(err&&err.code==="quota_exceeded"?"Mémoire pleine : supprime d'anciens devis.":"Enregistrement impossible pour l'instant. Réessaie.")}
+}
+async function dvClick(t,ds){
+  if(ds.dvnew!==undefined){openDevis(null);return true}
+  if(ds.dvopen!==undefined){openDevis(ds.dvopen);return true}
+  if(ds.dvf){dvFilter=ds.dvf;lsSet("op-dvf",dvFilter);if(V!=="devis")location.hash="devis";else render();return true}
+  if(ds.dvfromEnt!==undefined){readSheet();const e=draft,eid=openId;closeSheet();openDevis(null,{clientId:eid||"",clientNom:e?e.nom:""});return true}
+  if(!dvDraft)return false;
+  if(ds.dvclose!==undefined){closeDevis();return true}
+  if(ds.dvsave!==undefined){saveDevis();return true}
+  if(ds.dvst){readDevis();dvDraft.statut=ds.dvst;if(ds.dvst!=="accepte")dvDraft.sansFacture=false;drawDevis();return true}
+  if(ds.dvfree!==undefined){readDevis();dvDraft.lignes.push({d:"",q:1,pu:0});drawDevis();return true}
+  if(ds.dvrm!==undefined){readDevis();dvDraft.lignes.splice(+ds.dvrm,1);drawDevis();return true}
+  if(ds.dvcopy!==undefined){readDevis();const d=dvDraft;copy(["OmniService Sud Corse — devis "+d.num,(d.clientNom||"")+(d.objet?" — "+d.objet:""),""].concat((d.lignes||[]).map(l=>l.q+" × "+l.d+" — "+eur(l.q*l.pu)),["","TOTAL : "+eur(dvTot(d)),"TVA non applicable, art. 293 B du CGI."]).join("\n"));return true}
+  if(ds.dvask!==undefined){$("#dvdel").innerHTML=`<div class="confirm"><span>Supprimer définitivement ce devis ?</span><span class="btns"><button type="button" class="btn sm" data-dvno>Non</button><button type="button" class="btn sm danger" data-dvyes>Oui, supprimer</button></span></div>`;return true}
+  if(ds.dvno!==undefined){$("#dvdel").innerHTML=`<button type="button" class="btn danger" data-dvask>Supprimer ce devis</button>`;return true}
+  if(ds.dvyes!==undefined){try{await S.db.collection("devis").doc(dvOpen).delete();toast("Devis supprimé");closeDevis();render()}catch(e){toast("Suppression impossible")}return true}
+  return false;
+}
+document.addEventListener("input",ev=>{const t=ev.target;if(dvDraft&&t.dataset&&t.dataset.dvl!==undefined){readDevis();const b=document.getElementById("dv-total");if(b)b.textContent=eur(dvTot(dvDraft))}});
 /* ============ Fiche ============ */
 function openSheet(id){
   const e=id?S.ents.find(x=>x.id===id):null;
@@ -883,6 +1012,10 @@ function drawSheet(){
       <a class="btn sm" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Recherche ↗</a>
       ${d.web?`<a class="btn sm" href="${esc(/^https?:/.test(d.web)?d.web:"https://"+d.web)}" target="_blank" rel="noopener">Site ↗</a>`:""}
     </div>
+    <section class="panel"><h2>Devis</h2>
+      <div class="rows">${openId?S.devis.filter(x=>x.clientId===openId).map(dvRow).join(""):""}</div>
+      ${openId&&S.devis.some(x=>x.clientId===openId)?"":'<p class="note">Aucun devis pour cette entreprise.</p>'}
+      <div class="btns"><button type="button" class="btn" data-dvfrom-ent ${openId?"":"disabled"}>+ Créer un devis</button></div></section>
     <section class="panel"><h2>Journal</h2>
       <div class="btns" style="flex-wrap:nowrap"><input id="s-jn" placeholder="ex. Appelé, rappeler le gérant mardi" aria-label="Nouvelle note"><button type="button" class="btn" data-jadd>Ajouter</button></div>
       <div class="journal">${(d.journal||[]).slice().reverse().map(j=>`<div class="jn"><small>${esc(new Date(j.d).toLocaleString("fr-FR",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}))}</small>${esc(j.t)}</div>`).join("")||'<p class="note">Aucune note pour l\'instant. Chaque changement d\'étape s\'y inscrit tout seul.</p>'}</div></section>
@@ -940,6 +1073,7 @@ function bindAfter(){
 document.addEventListener("click",async ev=>{
   const t=ev.target.closest("button,a,g.mdot");if(!t)return;
   const ds=t.dataset;
+  if(await dvClick(t,ds))return;
   if(ds.open!==undefined){openSheet(ds.open);return}
   if(ds.new!==undefined){openSheet(null);return}
   if(ds.go){if(ds.fst!==undefined||ds.fsec!==undefined||ds.fcom!==undefined){Object.assign(F,{q:"",sec:ds.fsec||"",com:ds.fcom||"",zone:"",st:ds.fst||"",prio:""});lsSet("op-f",F)}
@@ -980,13 +1114,13 @@ document.addEventListener("click",async ev=>{
   if(ds.nodel!==undefined){$("#delzone").innerHTML=`<button type="button" class="btn danger" data-askdel>Supprimer cette entreprise</button>`;return}
   if(ds.yesdel!==undefined){try{await S.db.collection("entreprises").doc(openId).delete();toast("Fiche supprimée");closeSheet()}catch(e){toast("Suppression impossible pour l'instant")}return}
 });
-document.addEventListener("change",ev=>{const t=ev.target;if(t.id==="impfile"&&t.files&&t.files[0]){readImport(t.files[0]);t.value="";return}if(t.dataset&&t.dataset.tsel){const id=t.dataset.tsel;tourSel=t.checked?tourSel.concat([id]).slice(0,9):tourSel.filter(x=>x!==id);render()}});
+document.addEventListener("change",ev=>{const t=ev.target;if(t.id==="impfile"&&t.files&&t.files[0]){readImport(t.files[0]);t.value="";return}if(t.id==="dv-add"&&t.value&&dvDraft){readDevis();const [gi,ii]=t.value.split("-").map(Number),it=TARIFS[gi].items[ii];dvDraft.lignes.push({d:it[0],q:1,pu:it[1]});drawDevis();return}if(t.dataset&&t.dataset.tsel){const id=t.dataset.tsel;tourSel=t.checked?tourSel.concat([id]).slice(0,9):tourSel.filter(x=>x!==id);render()}});
 document.addEventListener("keydown",ev=>{const g=ev.target.closest&&ev.target.closest("g.mdot");if(g&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();Object.assign(F,{q:"",sec:"",com:g.dataset.fcom,zone:"",st:"",prio:""});lsSet("op-f",F);location.hash="annuaire"}});
-document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&draft)closeSheet();if(ev.key==="Enter"&&ev.target&&ev.target.id==="s-jn"){ev.preventDefault();const b=document.querySelector("[data-jadd]");b&&b.click()}});
-$("#scrim").addEventListener("click",closeSheet);
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&dvDraft){closeDevis();return}if(ev.key==="Escape"&&draft)closeSheet();if(ev.key==="Enter"&&ev.target&&ev.target.id==="s-jn"){ev.preventDefault();const b=document.querySelector("[data-jadd]");b&&b.click()}});
+$("#scrim").addEventListener("click",()=>{if(dvDraft)closeDevis();else closeSheet()});
 $("#sheet").addEventListener("change",ev=>{if(ev.target.id==="s-secteur"||ev.target.id==="s-commune"){readSheet();drawSheet()}});
 
-const VIEWS=["accueil","pipeline","annuaire","terrain","tarifs","arguments","outils"];
+const VIEWS=["accueil","pipeline","devis","annuaire","terrain","tarifs","arguments","outils"];
 function route(){const h=location.hash.replace("#","");const nv=VIEWS.includes(h)?h:"accueil";const go=()=>{V=nv;render(true);window.scrollTo(0,0)};if(document.startViewTransition&&!REDUCED&&S.loaded&&nv!==V)document.startViewTransition(go);else go()}
 window.addEventListener("hashchange",route);
 
@@ -1092,7 +1226,7 @@ async function saveFile(name,text,mime){
   }catch(e){if(!/cancel/i.test(String(e&&e.message)))toast("Fichier non enregistré")}
 }
 function exportBackup(){
-  const data={app:"OmniPilote",format:1,exporteLe:new Date().toISOString(),entreprises:STORE.d.entreprises,reglages:STORE.d.reglages};
+  const data={app:"OmniPilote",format:1,exporteLe:new Date().toISOString(),entreprises:STORE.d.entreprises,devis:STORE.d.devis||{},reglages:STORE.d.reglages};
   saveFile("omnipilote-sauvegarde-"+todayISO()+".json",JSON.stringify(data,null,1),"application/json");
 }
 let pendingImport=null;
@@ -1104,8 +1238,8 @@ function readImport(file){
   r.readAsText(file);
 }
 function applyImport(){
-  if(!pendingImport)return;STORE.d.entreprises=clone(pendingImport.entreprises);if(pendingImport.reglages)STORE.d.reglages=clone(pendingImport.reglages);
-  STORE.save();pendingImport=null;STORE.emit("entreprises");STORE.emit("reglages");toast("Sauvegarde importée");
+  if(!pendingImport)return;STORE.d.entreprises=clone(pendingImport.entreprises);if(pendingImport.reglages)STORE.d.reglages=clone(pendingImport.reglages);if(pendingImport.devis)STORE.d.devis=clone(pendingImport.devis);
+  STORE.save();pendingImport=null;STORE.emit("entreprises");STORE.emit("devis");STORE.emit("reglages");toast("Sauvegarde importée");
 }
 
 /* ============ Animations ============ */
@@ -1166,6 +1300,7 @@ function connect(){
     if(draft&&openId&&!S.ents.find(e=>e.id===openId)){closeSheet()}
     render(firstLoad);firstLoad=false;
   });
+  LocalDB.collection("devis").onSnapshot(snap=>{S.devis=snap.docs.map(d=>Object.assign({id:d.id},d.data()));if(!draft&&!dvDraft&&!firstLoad)render()});
   LocalDB.doc("meteo/jour").onSnapshot(s=>{const d=s.data&&s.data();if(d){S.meteo=d;if(!draft&&!firstLoad)render()}});
   LocalDB.doc("reglages/main").onSnapshot(s=>{const d=s.data&&s.data();if(d&&d.profils){S.reg={objectif:d.objectif??15000,profils:Object.assign({},DEF_PROFILS,d.profils||{})};if(!draft&&!firstLoad)render()}});
 }

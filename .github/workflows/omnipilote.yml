@@ -73,8 +73,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls -R out
-          gh release create "omnipilote-v1.0.${{ github.run_number }}" out/*/* \
+          gh release create "omnipilote-v1.1.${{ github.run_number }}" out/*/* \
             --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" \
-            --title "OmniPilote 1.0.${{ github.run_number }}" \
+            --title "OmniPilote 1.1.${{ github.run_number }}" \
             --notes "Appli OmniPilote pour Windows (installateur ou version portable) et Android (APK). Sous Windows, si SmartScreen s'affiche : Informations complémentaires, puis Exécuter quand même. Sous Android : autoriser l'installation depuis cette source."

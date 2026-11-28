@@ -1,7 +1,7 @@
 {
   "name": "omnipilote",
   "productName": "OmniPilote",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "OmniPilote – tableau de bord OmniService Sud Corse",
   "author": "OmniService Sud Corse",
   "main": "electron/main.js",
